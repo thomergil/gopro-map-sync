@@ -40,7 +40,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     args, pass_args = parser.parse_known_args()
 
     # logging
-    numeric_level = 1
+    numeric_level = 20 # info
     if args.log:
         numeric_level = getattr(logging, args.log.upper(), None)
     if not isinstance(numeric_level, int):
