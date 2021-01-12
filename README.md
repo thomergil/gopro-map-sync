@@ -194,6 +194,8 @@ pipenv run ./gpxanimator -j /path/to/gpx-animator.jar \
                          GH0100017.MP4 GH0100018.MP4
 ```
 
+There are some sample argument files in the project's [samples/](https://github.com/thomergil/gopro-map-sync/tree/main/samples) subdirectory.
+
 ### Advanced usage: using  `--files` to list MP4 files
 
 Sometimes you need to pass many .MP4 files to `gpxanimator` and it becomes
