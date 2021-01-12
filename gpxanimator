@@ -1,0 +1,286 @@
+#!/usr/bin/env python
+
+import os
+from subprocess import run, Popen, call, PIPE
+import sys
+import argparse
+import getpass
+import datetime
+import logging
+import re
+import shlex
+import traceback
+import textwrap
+from ffprobe import FFProbe
+
+import gpxlib
+
+GOPRO2GPX = "gopro2gpx"
+DURATION_FIX = -40 # milliseconds from calculated total duration
+OUTFILE = "/tmp/gpxanimator.gpx"
+
+def main():
+    parser = argparse.ArgumentParser(description="A wrapper around GPX Animator [https://gpx-animator.app]",
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog=textwrap.dedent('''\
+MORE INFORMATION
+----------------
+Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
+    '''))
+    duration_group = parser.add_mutually_exclusive_group()
+    duration_group.add_argument("-d", "--divide", help="Divide computed --total-duration by DIVIDE", type=float)
+    duration_group.add_argument("-t", "--total-duration", help="Force total duration of video (in milliseconds)", type=int)
+
+    parser.add_argument("-a", "--args", help="Default args for GPX Animator")
+    parser.add_argument("-f", "--files", help="See FILES below")
+    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file", required=True)
+    parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)")
+    parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
+    parser.add_argument("-z", "--timezone", help="Only when used with --reference: speedup by forcing timezone")
+    args, pass_args = parser.parse_known_args()
+
+    # logging
+    numeric_level = 1
+    if args.log:
+        numeric_level = getattr(logging, args.log.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args.log)
+    logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
+
+    #
+    # Read instructions from --files argument.
+    #
+    # Argument to --files is a file with lines consisting of one or two
+    # columns.
+    #
+    # The first column is an absolute or relative path to an .mp4 file.
+    # (Relative path is relative to the file itself.)
+    #
+    # If nothing else is specified on the line, gpxanimator will generate a
+    # .gpx file from the given .mp4 file.
+    #
+    # An optional second column is either the absolute or relative path (i.e.,
+    # relative to the file itself) to a .gpx file OR a string that starts with
+    # a '|' character. In that case, it specifies one or more functions that
+    # need to be applied to the .gpx file automatically generated from the .mp4 file.
+    #
+    # # 1 column only: path the .mp4 file
+    # /absolute/path/to/video.mp4
+    #
+    # # 2 columns: path to .mp4 file and path to .gpx file
+    # ./relative/path/to/video.mp4 ./relative/path/to/file.gpx
+    #
+    # # 2 colums: path to .mp4 file and a single pipe command
+    # ./relative/path/to/video.mp4 | gpxdup, duplicate=3, shift=0
+    #
+    # # 2 colums: path to .mp4 file and pipe command that consists of two
+    # # commands
+    # ./relative/path/to/video.mp4 | gpxdup, duplicate=3, shift=0 | gpxshift, value=-10
+    #
+    mp4_files, gpx_files, gpx_pipes, durations, total_duration = [], [], [], [], 0
+    if args.files:
+        files_basedir, _ = os.path.split(args.files)
+        with open(args.files, 'r') as f:
+            lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            words = shlex.split(line)
+            if not words[0].lower().endswith(".mp4"):
+                sys.exit("first column in %s needs to be an .mp4 file")
+            else:
+                if os.path.isabs(words[0]):
+                    mp4_files.append(words[0])
+                else:
+                    mp4_files.append(os.path.join(files_basedir, words[0]))
+                gpx_files.append(None)
+                gpx_pipes.append(None)
+
+            if len(words) > 1:
+                if words[1].lower().endswith(".gpx"):
+                    if os.path.isabs(words[1]):
+                        gpx_files[-1] = words[1]
+                    else:
+                        gpx_files[-1] = os.path.join(files_basedir, words[1])
+                elif words[1].startswith('|'):
+                    # join the rest of the line together, remove leading |
+                    cmd = " ".join(words[1:]).strip()[1:]
+                    gpx_pipes[-1] = cmd
+                else:
+                    sys.exit("optional second column in %s needs to be a .gpx file")
+
+    # no --files argument: read files from command line, but stop when encountering something that
+    # isn't a file.
+    else:
+        while len(pass_args) > 0:
+            p0 = pass_args[0]
+
+            if p0.lower().endswith(".mp4"):
+                mp4_files.append(pass_args.pop(0))
+            elif p0.lower().endswith(".gpx"):
+                gpx_files.append(pass_args.pop(0))
+            else:
+                break
+
+        if len(mp4_files) and len(gpx_files):
+            sys.exit("You can either pass .mp4 files or .gpx files, but not both. Consider using --files to pass both")
+
+        if not mp4_files:
+            mp4_files = [None] * len(gpx_files)
+
+        if not gpx_files:
+            gpx_files = [None] * len(mp4_files)
+
+        if not gpx_pipes:
+            gpx_pipes = [None] * len(mp4_files)
+
+    if not len(mp4_files) and not len(gpx_files):
+        sys.exit("Expected at least one .mp4 file or .gpx file")
+
+    # sanity check: all MP4 files exist
+    for f in mp4_files:
+        if f and not os.path.isfile(f):
+            sys.exit("video file %s does not exist" % (f))
+
+    # extract .gpx from .mp4
+    for idx, mp4_file in enumerate(mp4_files):
+        if not mp4_file:
+            continue
+
+        gpx_file = gpx_files[idx]
+
+        # if None gpx_file, generate it using gopro2gpx [https://github.com/NetworkAndSoftware/gopro2gpx]
+        #
+        #  $ gopro2gpx foo.mp4
+        #  Input files:
+        #   foo.mp4
+        #   Output file: foo.gpx
+        #
+        if not gpx_file:
+            thunk = run([GOPRO2GPX, mp4_file], capture_output=True, text=True)
+            if thunk.returncode:
+                sys.exit("%s failed:\n%s" % (GOPRO2GPX, thunk.stderr))
+            lines = thunk.stdout.strip().split("\n")
+
+            # output file is last word on last line
+            words = lines[-1].split()
+            fname = words[-1]
+            gpx_files[idx] = fname
+
+        # establish duration of mp4 file using ffprobe, we're looking for.
+        mp4_data = FFProbe(mp4_file)
+        duration_s = mp4_data.__dict__['metadata']['Duration']
+
+        # convert to duration by pretending it's a time since 00:00:00.00
+        zero = datetime.datetime.strptime('00:00:00.00', '%H:%M:%S.%f')
+        duration = datetime.datetime.strptime(duration_s, '%H:%M:%S.%f') - zero
+        durations.append(duration)
+        total_duration += duration.seconds * 1000 + duration.microseconds / 1000
+
+    # sanity check: all GPX files exist
+    for f in gpx_files:
+        if f and not os.path.isfile(f):
+            sys.exit("GPX file %s does not exist" % (f))
+
+    # sanity check: len(mp4_files) == len(gpx_files) == len(gpx_pipes)
+    if len(mp4_files) != len(gpx_files) or len(mp4_files) != len(gpx_pipes) or len(gpx_files) != len(gpx_pipes):
+        sys.exit("sanity check failed: mp4_files: %d, gpx_files: %d, gpx_pipes: %d" % (len(gpx_files), len(mp4_files), len(gpx_pipes)))
+
+    # read GPX files into points
+    gpx_file_points = []
+    for gpx_file in gpx_files:
+        logging.info("Reading GPX file %s" % (gpx_file))
+        _, points = gpxlib.read(gpx_file)
+        gpx_file_points.append(points)
+
+    # clean up outliers in GPX tracks
+    for idx, points in enumerate(gpx_file_points):
+        logging.info("Cleaning GPX file %s" % (gpx_file))
+        try:
+            gpx_file_points[idx] = gpxlib.gpxclean(points)
+        except Exception as e:
+            sys.exit(traceback.format_exc())
+
+    # handle pipes (see --files documentation)
+    #
+    # for example, given a "| gpxdup, duplicate=3", create a line of code:
+    #
+    # gpx_file_points[1] = gpxlib.gpxdup(gpx_file_points[1], duplicate=3)
+    #
+    # ...and call exec() on it
+    #
+    for idx, gpx_pipe in enumerate(gpx_pipes):
+        if not gpx_pipe:
+            continue
+
+        for xargs in gpx_pipe.split('|'):
+            xargs = [arg.strip() for arg in xargs.split(',')]
+            func = xargs.pop(0)
+            exec_s = "gpx_file_points[%d] = gpxlib.%s(gpx_file_points[%d], %s)" % (idx, func, idx, ", ".join(xargs))
+            logging.info("Piping GPX file %s through %s" % (gpx_file, exec_s))
+            try:
+                exec(exec_s)
+            except Exception as e:
+                sys.exit(traceback.format_exc())
+
+    # informative: list gpx files and durations
+    for idx, gpx_file in enumerate(gpx_files):
+        logging.info("Duration %s : %s" % (gpx_file, str(durations[idx]) if len(durations) else "?"))
+
+    # cat all files together
+    try:
+        logging.info("Concatenating all GPX files")
+        points = gpxlib.gpxcat(gpx_file_points, killgap=True)
+    except Exception as e:
+        sys.exit(traceback.format_exc())
+
+    # optionally run gpxcomment against reference file
+    gpx_in = None
+    if args.reference:
+        gpx_in, ref_points = gpxlib.read(args.reference)
+        try:
+            logging.info("Apply gpxcomment with reference %s" % (args.reference))
+            points = gpxlib.gpxcomment(points, ref_points, args.timezone)
+        except Exception as e:
+            sys.exit(traceback.format_exc())
+
+    # write result to a file as GPX Animator --input argument
+    gpx_out, segment = gpxlib.create(gpx_in)
+    segment.points = points
+    with open(OUTFILE, 'w') as f:
+        f.write(gpx_out.to_xml())
+
+    # create GPX Animator command line invocation from --args argument and all
+    # unprocessed command line arguments
+
+    # read default args for GPX Animator from a file, if given
+    if args.args:
+        with open(args.args, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                pass_args += shlex.split(line)
+
+    cmd = ["java", "-jar", args.jar]
+    cmd += pass_args
+
+    # --input argument to GPXA
+    for idx, gpx_file in enumerate(gpx_files):
+        cmd += ['--input', OUTFILE]
+
+    if args.divide:
+        total_duration /= float(args.divide)
+
+    if args.total_duration:
+        total_duration = args.total_duration
+
+    if total_duration:
+        cmd += ['--total-time', str(int(total_duration) + DURATION_FIX)]
+
+    logging.info(" ".join(cmd))
+    call(cmd)
+
+if __name__ == '__main__':
+    main()

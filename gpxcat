@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import sys
+import argparse
+import logging
+import traceback
+
+import gpxlib
+
+#
+# Assumptions:
+#
+# - A GoPro creates .mp4 files in TimeWarp mode with a constant speedup factor S.
+# - Time passed between the end of one .MP4 file and the start of the next.
+# (Presumably, to replace batteries.)
+# - Using https://github.com/NetworkAndSoftware/gopro2gpx, these MP4 files were turned into GPX files.
+# - There are n of these GPX files: file[0], file[1], ..., file[n-1].
+# - Each GPX file consists of a sorted array of (at least) {lat, lng, time} tuples.
+#
+# We observe that the following is true for each for each of these files with respect to the time:
+#
+# - time[0] is always the correct wallclock time, in other words, the GoPro
+# timestamps the start of the video with the correct real-world time.
+#
+# - The GoPro *incorrectly* timestamps subsequent tuples, making it appear the
+# speed was factor S higher than the actual speed. For example, if the speedup
+# factor S was 15, then the GoPro will make it seem like 15 real seconds took
+# only 1 second, which would give a bike of about 300 km/h. Of course that
+# makes total sense, since you'll be watching a video that was 15x accelerated;
+# to the viewer the bike is actually going 15x as fast.
+#
+# The goal of this script, then, is to create a GPX file that correctl
+#
+# - Remove gaps between GPX files, pretending that battery replacement is
+# instant.
+#
+# - Fix timestamps to the correct wallclock time so that tools like
+#
+# Illustration:
+#
+# file[0].time[0], file[0].time[1], ..., file[0].time[n], { gap[0] }
+# file[1].time[0], file[1].time[1], ..., file[1].time[n], { gap[1] }
+# file[2].time[0], file[2].time[1], ..., file[2].time[n], { gap[1] }
+#
+#
+def main():
+    parser = argparse.ArgumentParser(description="A tool to concatenate and time-correct one or more GPX files")
+    parser.add_argument("-v", "--verbose", help="Increase output verbosity (thus rendering output XML unusable)", action="store_true")
+    parser.add_argument("-s", "--stretch", help="Time expansion factor; can't be used with -u", type=int, default=gpxlib.DEFAULT_CAT_STRETCH)
+    parser.add_argument("-k", "--killgap", help="Removes time gap between GPX files", action="store_true")
+    parser.add_argument("-g", "--gaplength", help="When combined with -k replaces time gap with fixed # of seconds", type=int, default=gpxlib.DEFAULT_CAT_GAPLENGTH)
+    parser.add_argument("-m", "--maxspeed", help="When auto-correcting oddities, don't accept an implied speed greater than this", type=int, default=gpxlib.DEFAULT_CAT_MAXSPEED)
+    parser.add_argument("-o", "--output", help="Write output to OUTPUT")
+    parser.add_argument('files', nargs='*')
+    args = parser.parse_args()
+
+    if not args.files:
+        parser.error('At least one one input file expected')
+
+    points_list = []
+
+    for f in args.files:
+        gpx_in, points = gpxlib.read(f)
+        points_list.append(points)
+
+    gpx_out, segment = gpxlib.create(gpx_in)
+
+    try:
+        segment.points = gpxlib.gpxcat(points_list, stretch=args.stretch, killgap=args.killgap, gaplength=args.gaplength, maxspeed=args.maxspeed)
+    except Exception as e:
+        sys.exit(traceback.format_exc())
+
+    s = gpx_out.to_xml()
+    if args.output:
+        with open(args.output, 'w') as f:
+            f.write(s)
+    else:
+        print(s)
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import sys
+import argparse
+import logging
+import traceback
+
+import gpxlib
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Kill outlier points")
+    parser.add_argument("-t", "--tolerance", help="Number of consecutive outlier points allowed", type=int, default=gpxlib.DEFAULT_TOLERANCE)
+    parser.add_argument("-d", "--distance", help="Distance where a point is considered an outlier", type=int, default=gpxlib.DEFAULT_MAXDIST)
+    parser.add_argument('file', nargs='?')
+    args, pass_args = parser.parse_known_args()
+
+    logging.basicConfig(level=1, format="%(asctime)s -- %(message)s")
+
+    gpx_in, points = gpxlib.read(args.file)
+    gpx_out, segment = gpxlib.create(gpx_in)
+
+    try:
+        segment.points = gpxlib.gpxclean(points, maxdist=args.distance, tolerance=args.tolerance)
+    except Exception as e:
+        sys.exit(traceback.format_exc())
+
+    s = gpx_out.to_xml()
+    print(s)
+
+if __name__ == '__main__':
+    main()

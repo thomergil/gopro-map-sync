@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[packages]
+gpxpy = "*"
+geopy = "*"
+timezonefinder = "*"
+python-dateutil = "*"
+ffprobe-python = "*"
+dateparser = "*"
+
+[dev-packages]
+pylint = "*"
+autopep8 = "*"

@@ -1,0 +1,11 @@
+--color #FF0000
+--tms-url-template 'http://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={zoom}'
+--background-map-visibility 1.0
+--tail-duration 0
+--pre-draw-track
+--pre-draw-track-color #808080
+--attribution-position hidden
+--information-position hidden
+--comment-position hidden
+--fps 5
+--output movie-full.mp4

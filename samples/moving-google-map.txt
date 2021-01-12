@@ -1,0 +1,17 @@
+--color #FF0000
+--tms-url-template 'http://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={zoom}'
+--zoom 14
+--margin 300
+--background-map-visibility 1.0
+--viewport-height 1024
+--viewport-width 256
+--viewport-inertia 35
+--tail-duration 0
+--pre-draw-track
+--pre-draw-track-color #808080
+--attribution-position hidden
+--information-position hidden
+--font Monospaced-PLAIN-24
+--comment-position 'top left'
+--comment-margin 20
+--output movie.mp4
