@@ -462,9 +462,9 @@ pipenv run ./gpxstats file.gpx
 
 Visual tools are better suited for this, however.
 
-### Common synchronization problems
+### Common synchronization problems and solutions
 
-There are common problems that cause GoPro footage and map video to be out of sync. Here is a list of problems.
+There are common problems that cause GoPro footage and map video to be out of sync. Here is a list of common problems and solutions.
 
 ##### The footage is immediately out of sync
 
@@ -478,11 +478,19 @@ This happens on boundaries between MP4 files. My GoPro HERO 8 Black consistently
 
 ##### The map gets ahead of the footage
 
-This means GPX points are missing at the start of the file. Use `gpxdup, duplicate=N` to duplicate points at the start of the GPX file. Start with N=1 or N=2.
+This means GPX points are missing at the start of the file. Use `gpxdup, duplicate=N` in the `--files` file argument to duplicate points at the start of the GPX file. Start with N=1 or N=2.
 
 **The map gets behind of the GoPro**
 
-This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` to strip points from the start of the GPX file. Start with N=1 or N=2.
+This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` in the `--files` file argument to strip points from the start of the GPX file. Start with N=1 or N=2.
+
+**There is a crazy outlier point that screws everything up**
+
+Run the GPX file through `gpxclean`. Usually it's a single outlier point, but sometimes it's more, in which case you need to set `--tolerance` to a higher number.
+
+##### It crashes
+
+Please file an issue! Thank you.
 
 ### Other projects
 
