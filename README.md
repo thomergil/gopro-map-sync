@@ -145,7 +145,7 @@ gpxanimator -j gpxanimator.jar -o output.mp4 file1.mp4 [file2.mp4 [...]]
 
 ### Passing additional arguments to GPX Animator via `gpxanimator`'s command line
 
-Any command line parameter **not** consumed by `gpxanimator` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxanimator`; all other arguments are passed to the GPX Animator command line.  
+Any command line parameter **not** consumed by `gpxanimator` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxanimator`; all other arguments are passed to the GPX Animator command line.
 
 ```bash
 pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
@@ -163,7 +163,7 @@ pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
    GH0100017.MP4 GH0100018.MP4
 ```
 
-### Passing GPX Animator command line options using `--args` 
+### Passing GPX Animator command line options using `--args`
 
 In the example above, the command line gets awkwardly long. You can put GPX Animator command line arguments in a file and pass it to `gpxanimator` with `--args`.
 
@@ -227,7 +227,7 @@ pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
 
 ### Advanced usage: using  `--files` to use custom GPX files
 
-Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxanimator` to use a customer .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxanimator` will use that file rather than the output of `gopro2gpx`.
+Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxanimator` to use a custom .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxanimator` will use that file rather than the output of `gopro2gpx`.
 
 ```
 #
@@ -241,7 +241,7 @@ Sometimes the output of `gopro2gpx` is not good enough and you need to manipulat
 
 ### Advanced usage: using  `--files` to manipulate GPX files
 
-Sometimes the output of `gopro2gpx` requires only a fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than manually creating a file, I can tell `gpxanimator` to run `gpxdup` on the output of `gopro2gpx`.
+Sometimes the output of `gopro2gpx` requires only a small fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than running `gpxdup` manually and storing the result in a file, you can tell `gpxanimator` to run `gpxdup` on the output of `gopro2gpx`. If the second column starts with a pipe ( `|`), the rest of the line defines one or more functions to perform on the output of `gopro2gpx`.
 
 ```
 #
@@ -253,7 +253,7 @@ Sometimes the output of `gopro2gpx` requires only a fix. For example, my GoPro H
 ./GH0100018.MP4 | gpxdup, duplicate=1
 ```
 
-Any of the functions in `gpxlib.py` can be invoked using this mechanism. Multiple commands can be piped. The follow example is functionally equivalent to the previous example.
+Any of the functions in `gpxlib.py` can be invoked using this mechanism. (They are explained below.) Multiple commands can be piped. The follow example is functionally equivalent to the previous example.
 
 ```
 #
@@ -267,7 +267,7 @@ Any of the functions in `gpxlib.py` can be invoked using this mechanism. Multipl
 
 ### Advanced usage: combine with a "real" GPX file
 
-GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro footage, but speed and time are incorrect, especially if footage was shot in TimeWarp mode. `gpxanimator` can "reconstruct" the correct information by copying it from another GPX file with the `--reference` argument. For example:
+GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro footage, but GPX Animator will not know the correct speed and time, especially if footage was shot in TimeWarp mode. `gpxanimator` can "reconstruct" the correct information by copying it from another GPX file with the `--reference` argument. For example:
 
 ```bash
 # You need to replace the -j argument and point
@@ -285,7 +285,7 @@ Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each
 
 ### Advanced usage: using `--files`, `--args` , `--reference` with Docker
 
-Docker images can only access files on your disk if you first mount them with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
+Docker images cannot access files on your disk unless you mount the containing folder with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
 
 Note, this may be **slow**:
 
@@ -347,7 +347,7 @@ This can be used combined with `--gaplength SECS` to add a number of seconds (**
 pipenv run ./gpxcat --killgap --gaplength 10 file1.gpx file2.gpx
 ```
 
-If footage was shot with TimeWarp 10x or 15x (not Auto!), then all gaps can be multiplied to "reconstruct" the original timestamps. Again, this does **not work with TimeWarp Auto**. 
+If footage was shot with TimeWarp 10x or 15x (not Auto!), then all gaps can be multiplied to "reconstruct" the original timestamps. Again, this does **not work with TimeWarp Auto**.
 
 ```bash
 pipenv run ./gpxcat --killgap --stretch 10 file1.gpx file2.gpx
@@ -472,7 +472,7 @@ The GoPro takes a while to obtain a GPS lock. Until it does, it either does not 
 
 The first time you turn on a GoPro to record footage, it is advisable to turn it on, let it obtain GPS lock for a few minutes. Record a 60-second video. Turn it off. It is now ready for use.
 
-**The footage gets out of sync** 
+**The footage gets out of sync**
 
 This happens on boundaries between MP4 files. My GoPro HERO 8 Black consistently drops 2 GPX points at the start of each movie. In the `--files` examples above you can see frequent examples of `| gpxdup, duplicate=2` to duplicate the first GPX point twice (for a total of 3 points) to smooth out this problem.
 
@@ -497,5 +497,3 @@ This means there are too many GPX points at the start of the file. Use `gpxdup, 
 * https://github.com/JuanIrache/gopro-telemetry (code that runs https://goprotelemetryextractor.com/free/), a tool similar to `gopro2gpx`, but not suitable for this project because it does not work correctly for TimeWarp'd footage.
 
 * [GPX Editor](https://apps.apple.com/nl/app/gpx-editor/id924782627?mt=12), a tool to manipulate GPX files for Mac. I don't love it, but it does the job.
-
-  
