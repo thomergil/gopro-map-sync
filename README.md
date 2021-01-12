@@ -8,7 +8,7 @@ This is a set of tools to generate a moving map video that synchronizes **exactl
 
 Ideally, it all works out of the box with `gpxanimator`; see below for a simple example.
 
-In reality, however, GoPro metadata is sloppy; some tweaking will be required.
+In reality, however, GoPro metadata is sloppy; some tweaking will be required. (See "Common synchronization problems" at the end of this document.)
 
 For that purpose, `gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elements of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally, `gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX  with `<cmt>` blocks for later consumption by GPX Animator. Most of these tools can be combined together with UNIX pipes.
 
@@ -462,7 +462,9 @@ There are common problems that cause GoPro footage and map video to be out of sy
 
 ##### The footage is immediately out of sync
 
-The GoPro takes a while to get a GPS lock. Until it does, it either does not record any GPX points or it records wildly inaccurate GPX points. Use a visual GPX editor or `gpxdup` and/or `gpxshift` to remove those points and/or (re)insert them. Make sure timestamps remain smooth relative to the rest of the file.
+The GoPro takes a while to obtain a GPS lock. Until it does, it either does not record any GPX points or it records wildly inaccurate GPX points. Use a visual GPX editor or `gpxdup` and/or `gpxshift` to remove those points and/or (re)insert them. When editing, make sure timestamps remain smooth relative to the rest of the file.
+
+The first time you turn on a GoPro to record footage, it is advisable to turn it on, let it obtain GPS lock for a few minutes. Record a 60-second video. Turn it off. It is now ready for use.
 
 **The footage gets out of sync** 
 
