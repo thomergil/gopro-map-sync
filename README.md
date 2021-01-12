@@ -4,6 +4,10 @@
 
 This is a set of tools to generate a moving map video that synchronizes **exactly** with GoPro footage. Heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but `gopro-map-sync` uses other tools such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx) and ffmpeg.
 
+![screenshot](assets/screenshot.png)
+
+[Example video on YouTube](https://youtu.be/T-CVODzsr_M?t=98)
+
 `gopro-map-sync` leverages telemetry data (specifically, GPS location) stored in GoPro MP4 files. It can handle footage recorded in GoPro TimeWarp mode. It can optionally reference a GPX file (for example, from a Garmin or Wahoo) file to annotate the video with additional information.
 
 Ideally, it all works out of the box with `gpxanimator`; see below for a simple example.
