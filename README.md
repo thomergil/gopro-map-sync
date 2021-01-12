@@ -2,19 +2,17 @@
 
 ### Introduction
 
-This is a set of tools to **exactly** synchronize GoPro footage with a moving map. The heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but it leverages other tools, such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx).
+This is a set of tools to generate a moving map video that synchronizes **exactly** with GoPro footage. Heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but `gopro-map-sync` uses other tools such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx) and ffmpeg.
 
-`gopro-map-sync` uses telemetry data (most critically, GPS location) that is stored as metadata in GoPro movie files. It can handle footage that was recorded in TimeWarp mode. It can optionally reference a GPX file (for example, from a Garmin or Wahoo) file to annotate the video with additional information.
+Example: https://vimeo.com/498614551/796e605784
 
-##### One wrapper: `gpxanimator`
+`gopro-map-sync` leverages telemetry data (specifically, GPS location) stored in GoPro MP4 files. It can handle footage recorded in GoPro TimeWarp mode. It can optionally reference a GPX file (for example, from a Garmin or Wahoo) file to annotate the video with additional information.
 
-Ideally, it should all work with just one tool, `gpxanimator`. In reality, however, the GoPro metadata is sloppy, and some tweaking will be required.
+Ideally, it all works out of the box with `gpxanimator`; see below for a simple example.
 
-##### Additional tools for manipulating GPX files
+In reality, however, GoPro metadata is sloppy; some tweaking will be required.
 
-For that purpose,`gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elemnts of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally,`gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX with `<cmt>` blocks for later consumption by GPX Animator.
-
-Most of these tools can be combined together with UNIX pipes. In other words, the output of each of these tools can be used as input for others.
+For that purpose,`gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elements of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally,`gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX  with `<cmt>` blocks for later consumption by GPX Animator. Most of these tools can be combined together with UNIX pipes.
 
 ### Zero installation with Docker
 
@@ -37,9 +35,8 @@ brew install ffmpeg
 
 # install gopro2gpx [https://github.com/NetworkAndSoftware/gopro2gpx]
 brew install cmake
-git clone git@github.com:NetworkAndSoftware/gopro2gpx.git
+git clone --recurse-submodules git@github.com:NetworkAndSoftware/gopro2gpx.git
 cd ./gopro2gpx
-git clone git@github.com:gopro/gpmf-parser.git
 cmake .
 make
 cd ..
@@ -63,6 +60,9 @@ cd ./gopro-map-sync
 # On macOs Big Sur (11.0) this prevents python package errors
 export SYSTEM_VERSION_COMPAT=1
 pipenv install
+
+# test that it works
+pipenv run ./gpxanimator --help
 ```
 
 ### Installation for Linux
@@ -77,9 +77,8 @@ echo 'You need to manually install adoptopenjdk; see above'
 sudo apt-get install -y vim python3 git cmake build-essential pipenv ffmpeg
 
 # install gopro2gpx [https://github.com/NetworkAndSoftware/gopro2gpx]
-git clone git@github.com:NetworkAndSoftware/gopro2gpx.git
+git clone --recurse-submodules git@github.com:NetworkAndSoftware/gopro2gpx.git
 cd ./gopro2gpx
-git clone git@github.com:gopro/gpmf-parser.git
 cmake .
 make
 cp gopro2gpx /usr/local/bin/
@@ -197,7 +196,7 @@ pipenv run ./gpxanimator -j /path/to/gpx-animator.jar \
                          GH0100017.MP4 GH0100018.MP4
 ```
 
-### Advanced usage: using  `--file` to list MP4 files
+### Advanced usage: using  `--files` to list MP4 files
 
 Sometimes you need to pass many .MP4 files to `gpxanimator` and it becomes
 easier to create a file with filenames in it.
@@ -222,7 +221,7 @@ pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
                          --files files.txt
 ```
 
-### Advanced usage: using  `--file` to use custom GPX files
+### Advanced usage: using  `--files` to use custom GPX files
 
 Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxanimator` to use a customer .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxanimator` will use that file rather than the output of `gopro2gpx`.
 
@@ -236,7 +235,7 @@ Sometimes the output of `gopro2gpx` is not good enough and you need to manipulat
 ./GH0100018.MP4
 ```
 
-### Advanced usage: using  `--file` to manipulate GPX files
+### Advanced usage: using  `--files` to manipulate GPX files
 
 Sometimes the output of `gopro2gpx` requires only a fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than manually creating a file, I can tell `gpxanimator` to run `gpxdup` on the output of `gopro2gpx`.
 
@@ -279,6 +278,42 @@ pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
 When you use `--reference`, it is **strongly recommended**, you also use the `--timezone` argument. (Otherwise there will be a timezone lookup for each GPX point, which dramatically impacts performance.) This process of "annotating" data is messy and imperfect, especially as GoPro footage is interrupted (for example, for battery changes) and the Garmin or Wahoo pauses when standing still.
 
 Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each GPX track point, which GPX Animator consumes using the `--comment-position` argument.
+
+### Advanced usage: using `--files`, `--args` , `--reference` with Docker
+
+Docker images can only access files on your disk if you first mount them with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args `and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
+
+Note, this may be **slow**:
+
+```bash
+# this may be slow if there is a lot of content in /Users/john/Movies!
+docker run \
+  --mount="type=bind,source=/Users/john/Movies/,target=/videos/"
+  --mount="type=bind,source=/Users/john/save/,target=/data/"
+  -t gpxanimator:latest
+  --log info
+  --files /data/2020-08-17.txt
+  --args /data/args.txt
+  --divide 4
+  --reference /data/2020-08-17.gpx
+  --timezone Europe/Amsterdam
+  --output /videos/movie.mp4
+```
+
+Output will be written to `/Users/john/Movies/movie.mp4`.
+
+Note that `2020-08-17.txt` needs to reference MP4 files as if they were located in `/videos`, since that is where we told Docker to mount the directory.
+
+`2020-08-17.txt`:
+
+```
+/videos/2020-08-17-01.mp4
+# skip 2020-08-17-02.mp4
+/videos/2020-08-17-03.mp4 | gpxdup, duplicate=3, shift=0
+/videos/2020-08-17-04.mp4 | gpxdup, duplicate=1, shift=0
+```
+
+If you get a `java.lang.OutOfMemoryError: Java heap space` error, you may need to extra RAM resources for Docker.
 
 ### Other projects
 
