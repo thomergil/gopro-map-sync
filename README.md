@@ -10,7 +10,7 @@ Ideally, it all works out of the box with `gpxanimator`; see below for a simple 
 
 In reality, however, GoPro metadata is sloppy; some tweaking will be required.
 
-For that purpose,`gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elements of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally,`gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX  with `<cmt>` blocks for later consumption by GPX Animator. Most of these tools can be combined together with UNIX pipes.
+For that purpose, `gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elements of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally, `gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX  with `<cmt>` blocks for later consumption by GPX Animator. Most of these tools can be combined together with UNIX pipes.
 
 ### Zero installation with Docker
 
@@ -279,7 +279,7 @@ Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each
 
 ### Advanced usage: using `--files`, `--args` , `--reference` with Docker
 
-Docker images can only access files on your disk if you first mount them with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args `and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
+Docker images can only access files on your disk if you first mount them with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
 
 Note, this may be **slow**:
 
@@ -312,6 +312,169 @@ Note that `2020-08-17.txt` needs to reference MP4 files as if they were located 
 ```
 
 If you get a `java.lang.OutOfMemoryError: Java heap space` error, you may need to extra RAM resources for Docker.
+
+### Additional tools/functions in `gopro-map-sync`
+
+These tools are available on the command line, but also as functions that you can invoke in `--files`.
+
+#### `gpxcat`: concatenate files
+
+In its simplest forms, `gpxcat` concatenates multiple GPX files together.
+
+```bash
+pipenv run ./gpxcat file1.gpx file2.gpx
+```
+
+The result is files `file1.gpx`  followed by `file2.gpx`.
+
+However, there is likely a timestamp gap between the end of `file1.gpx` and the start of `file2.gpx`. The `--killgap` smoothes that out.
+
+```bash
+pipenv run ./gpxcat --killgap file1.gpx file2.gpx
+```
+
+`gpxcat` tracks the averag gap between timestamps and uses that to fill in the gap between `file1.gpx` and `file2.gpx`.
+
+This can be used combined with `--gaplength SECS` to add a number of seconds (**in addition** to the computed average) between the last point of `file1.gpx` and the first point of `file2.gpx`.
+
+```bash
+pipenv run ./gpxcat --killgap --gaplength 10 file1.gpx file2.gpx
+```
+
+If footage was shot with TimeWarp 10x or 15x (not Auto!), then all gaps can be multiplied to "reconstruct" the original timestamps. Again, this does **not work with TimeWarp Auto**. 
+
+```bash
+pipenv run ./gpxcat --killgap --stretch 10 file1.gpx file2.gpx
+```
+
+This multiplies the length of each time gap by 10x.
+
+#### `gpxtac`: invert GPX points
+
+In its simplest form, `gpxtac` inverses all points in a file:
+
+```bash
+pipenv run ./gpxtac file1.gpx
+```
+
+However, this also inverts timestamps, meaning that time is going backwards. To rotate just GPS locations, but not timestamps, use `--time`:
+
+```bash
+pipenv run ./gpxtac --time file1.gpx
+```
+
+#### `gpxhead` and `gpxtail`
+
+Like, UNIX `head` and `tail`, both can take a numeric flag to indicate the number of lines at the start/end of the file to display:
+
+```bash
+pipenv run ./gpxhead -20 file.gpx
+pipenv run ./gpxtail -5 file.gpx
+```
+
+#### `gpxclean`: remove outliers
+
+Removes outlier points.
+
+```bash
+pipenv run ./gpxclean file.gpx
+```
+
+If you expect more than 1 consecutive points to be outliers, you can specify it with `--tolerance`:
+
+```bash
+pipenv run ./gpxclean --tolerance 3 file.gpx
+```
+
+You can change the default distance that is considered an outlier, using `--distance METERS`.
+
+```bash
+pipenv run ./gpxclean --distance 400 file.gpx
+```
+
+Any single point 400+ meters removed from the previous point is removed.
+
+#### `gpxdup`: duplicate the first GPX point
+
+Duplicates the first point in a GPX file. It can shift duplicated points geographically (with `--distance`) and in time (with `--time`).
+
+```bash
+pipenv run ./gpxdup --duplicate 1 --shift 0 --time 400 file.gpx
+```
+
+This duplicates the first point, in the same physical location, but 400ms earlier than the first point.
+
+`gpxdup` can remove points before duplicating (what will become) the first point. It can either remove a fixed number of points (with `--strip`) or it can read another GPX file (for example, from Garmin or Wahoo) and remove all points that are more than a certain distance away from the first point from that alternative GPX.
+
+For example, to remove all points more than 200m away from the first point in a GPX file `reference.gpx`, and to then duplicate the same number of points as were removed:
+
+```bash
+pipenv run ./gpxdup --smart-strip reference.gpx --smart-strip-radius 200 --smart-duplicate file.gpx
+```
+
+#### `gpxshift`: time shift all GPX points
+
+Time shifts all points in a GPX file. The shift can be relative (negative or positive). It can also be an absolute start time or end time.
+
+To time shift all points by 20 seconds:
+
+```bash
+pipenv run ./gpxshift +20 file.gpx
+```
+
+To set the first timestamp to `2021-01-02T14:33:45.462000Z`:
+
+```bash
+pipenv run ./gpxshift '2021-01-02T14:33:45.462000Z' file.gpx
+```
+
+The set the last timestamp to `2021-01-02T14:33:45.462000Z`:
+
+```bash
+pipenv run ./gpxshift --last '2021-01-02T14:33:45.462000Z' file.gpx
+```
+
+#### `gpxcomment`: annotate a GoPro GPX file with data from another GPX file
+
+Ingests one or more GoPro GPX files and an additional GPX file (with `--reference`) that came from a "real" tracking device, such as a Wahoo or Garmin. The result is a GoPro GPX file with a `<cmt>` block on each GPX point that can be consumed by GPX Animator for the `--comment-position` functionality.
+
+For example, to annotate `file.gpx` with data from `wahoo.gpx`:
+
+```bash
+pipenv run ./gpxcomment --reference wahoo.gpx --timezone Europe/Amsterdam file.gpx
+```
+
+It is **very important** to use the `--timezone` flag when using `gpxcomment`. Otherwise it will try to map the timezone for each GPX point, which significantly slows performance.
+
+#### `gpxstats`: human readable GPX
+
+To inspect a GPX file:
+
+```bash
+pipenv run ./gpxstats file.gpx
+```
+
+Visual tools are better suited for this, however.
+
+### Common synchronization problems
+
+There are common problems that cause GoPro footage and map video to be out of sync. Here is a list of problems.
+
+##### The footage is immediately out of sync
+
+The GoPro takes a while to get a GPS lock. Until it does, it either does not record any GPX points or it records wildly inaccurate GPX points. Use a visual GPX editor or `gpxdup` and/or `gpxshift` to remove those points and/or (re)insert them. Make sure timestamps remain smooth relative to the rest of the file.
+
+**The footage gets out of sync** 
+
+This happens on boundaries between MP4 files. My GoPro HERO 8 Black consistently drops 2 GPX points at the start of each movie. In the `--files` examples above you can see frequent examples of `| gpxdup, duplicate=2` to duplicate the first GPX point twice (for a total of 3 points) to smooth out this problem.
+
+##### The map gets ahead of the footage
+
+This means GPX points are missing at the start of the file. Use `gpxdup, duplicate=N` to duplicate points at the start of the GPX file. Start with N=1 or N=2.
+
+**The map gets behind of the GoPro**
+
+This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` to strip points from the start of the GPX file. Start with N=1 or N=2.
 
 ### Other projects
 
