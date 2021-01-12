@@ -286,15 +286,15 @@ Note, this may be **slow**:
 ```bash
 # this may be slow if there is a lot of content in /Users/john/Movies!
 docker run \
-  --mount="type=bind,source=/Users/john/Movies/,target=/videos/"
-  --mount="type=bind,source=/Users/john/save/,target=/data/"
-  -t gpxanimator:latest
-  --log info
-  --files /data/2020-08-17.txt
-  --args /data/args.txt
-  --divide 4
-  --reference /data/2020-08-17.gpx
-  --timezone Europe/Amsterdam
+  --mount="type=bind,source=/Users/john/Movies/,target=/videos/" \
+  --mount="type=bind,source=/Users/john/save/,target=/data/" \
+  -t gpxanimator:latest \
+  --log info \
+  --files /data/2020-08-17.txt \
+  --args /data/args.txt \
+  --divide 4 \
+  --reference /data/2020-08-17.gpx \
+  --timezone Europe/Amsterdam \
   --output /videos/movie.mp4
 ```
 
