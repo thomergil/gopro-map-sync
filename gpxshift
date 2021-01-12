@@ -11,7 +11,7 @@ import gpxlib
 def main():
     parser = argparse.ArgumentParser(description="A tool to shift timestamps in a GPX file")
     parser.add_argument("-v", "--verbose", help="Increase output verbosity (thus rendering output XML unusable)", action="store_true")
-    parser.add_argument("-l", "--last", help="Relative shift", action="store_true")
+    parser.add_argument("-l", "--last", help="Set the last timestamp; only useful with an absolute timestamp", action="store_true")
     parser.add_argument("-o", "--output", help="Write output to OUTPUT")
     parser.add_argument('value')
     parser.add_argument('file', nargs='?')
