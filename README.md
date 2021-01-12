@@ -6,7 +6,7 @@ This is a set of tools to generate a moving map video that synchronizes **exactl
 
 ![screenshot](assets/screenshot.png)
 
-[Example video](https://youtu.be/T-CVODzsr_M?t=98), courtesy of Ronald Boer.
+[Example video](https://youtu.be/T-CVODzsr_M?t=5), courtesy of Ronald Boer.
 
 `gopro-map-sync` leverages telemetry data (specifically, GPS location) stored in GoPro MP4 files. It can handle footage recorded in GoPro TimeWarp mode. It can optionally reference a GPX file (for example, from a Garmin or Wahoo) file to annotate the video with additional information.
 
