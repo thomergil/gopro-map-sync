@@ -49,7 +49,6 @@ def main():
     parser.add_argument("-s", "--stretch", help="Time expansion factor; can't be used with -u", type=int, default=gpxlib.DEFAULT_CAT_STRETCH)
     parser.add_argument("-k", "--killgap", help="Removes time gap between GPX files", action="store_true")
     parser.add_argument("-g", "--gaplength", help="When combined with -k replaces time gap with fixed # of seconds", type=int, default=gpxlib.DEFAULT_CAT_GAPLENGTH)
-    parser.add_argument("-m", "--maxspeed", help="When auto-correcting oddities, don't accept an implied speed greater than this", type=int, default=gpxlib.DEFAULT_CAT_MAXSPEED)
     parser.add_argument("-o", "--output", help="Write output to OUTPUT")
     parser.add_argument('files', nargs='*')
     args = parser.parse_args()
@@ -66,7 +65,7 @@ def main():
     gpx_out, segment = gpxlib.create(gpx_in)
 
     try:
-        segment.points = gpxlib.gpxcat(points_list, stretch=args.stretch, killgap=args.killgap, gaplength=args.gaplength, maxspeed=args.maxspeed)
+        segment.points = gpxlib.gpxcat(points_list, stretch=args.stretch, killgap=args.killgap, gaplength=args.gaplength)
     except Exception as e:
         sys.exit(traceback.format_exc())
 
