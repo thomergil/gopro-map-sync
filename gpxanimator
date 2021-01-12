@@ -252,19 +252,36 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         f.write(gpx_out.to_xml())
 
     # create GPX Animator command line invocation from --args argument and all
-    # unprocessed command line arguments
+    # unprocessed command line arguments; command-line arguments override
+    # settings from --args
 
     # read default args for GPX Animator from a file, if given
+    pass_args_h = {}
     if args.args:
         with open(args.args, 'r') as f:
             for line in f.readlines():
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                pass_args += shlex.split(line)
+                thunk = shlex.split(line)
+                flag = thunk.pop(0)
+                pass_args_h[flag] = None
+                if len(thunk):
+                    pass_args_h[flag] = thunk[0]
+
+    # turn pass_args_into a hash
+    while len(pass_args):
+        arg = pass_args.pop(0)
+        if arg.startswith('--') and pass_args[0] and not pass_args[0].startswith('--'):
+            pass_args_h[arg] = pass_args.pop(0)
+        else:
+            pass_args_h[arg] = None
 
     cmd = ["java", "-jar", args.jar]
-    cmd += pass_args
+    for key, value in pass_args_h.items():
+        cmd.append(key)
+        if value:
+            cmd.append(value)
 
     # --input argument to GPXA
     for idx, gpx_file in enumerate(gpx_files):
