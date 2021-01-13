@@ -73,7 +73,7 @@ pipenv run ./gpxmapmovie --help
 
 ```bash
 # TODO: INSTALL adoptopenjdk
-# see https://adoptopenjdk.net/installation.html#
+# see https://adoptopenjdk.net/installation.html?variant=openjdk15&jvmVariant=hotspot#linux-pkg
 
 echo 'You need to manually install adoptopenjdk; see above'
 
@@ -85,16 +85,17 @@ git clone --recurse-submodules git@github.com:NetworkAndSoftware/gopro2gpx.git
 cd ./gopro2gpx
 cmake .
 make
-cp gopro2gpx /usr/local/bin/
+sudo cp gopro2gpx /usr/local/bin/
 
 # install GPX Animator [https://github.com/zdila/gpx-animator]
 cd ..
-git clone git@github.com/zdila/gpx-animator
+git clone git@github.com:zdila/gpx-animator.git
 cd ./gpx-animator
 ./gradlew assemble
 
 # install gopro-map-sync
-git clone git@github.com/thomergil/gopro-map-sync
+cd ..
+git clone git@github.com:thomergil/gopro-map-sync.git
 cd ./gopro-map-sync
 pipenv install
 
