@@ -419,6 +419,7 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
 
 
 
+LOOKBACK = 10
 def gpxcomment(points, ref_points, force_timezone=False):
 
     # build map of all pause starts in reference
@@ -428,6 +429,7 @@ def gpxcomment(points, ref_points, force_timezone=False):
     # go through all GoPro GPX files
     pause_idx, pause_start_at, pause_duration, pause_points = None, None, None, []
     idx, prev_idx, cumulative_dist = -1, 0, 0
+    backstop_idx = 0
 
     # look up timezone of first point
     to_zone_str = None
@@ -437,7 +439,6 @@ def gpxcomment(points, ref_points, force_timezone=False):
 
     xpoints, processed_pauses = [], []
     for pidx, point in enumerate(points):
-        logging.info("gpxcomment: %05d / %05d (%02d%%)" % (pidx+1, len(points), ((pidx+1) / len(points)) * 100))
         logging.debug("Processing pidx %d, point %s, prev_idx = %s" % (pidx, str(point), str(prev_idx)))
 
         # distance of previous point/reference match
@@ -446,7 +447,7 @@ def gpxcomment(points, ref_points, force_timezone=False):
             prev_dist = dist(points[pidx-1], ref_points[prev_idx])
 
         # find the best distance match
-        idx = find_closest(point, ref_points, idx+1, prev_dist)
+        idx = find_closest(point, ref_points, max(0, backstop_idx, idx-LOOKBACK), prev_dist)
 
         # possibly snap it to a pause
         snap_idx = snap_to_pause(pauses, ref_points, idx)
@@ -487,6 +488,7 @@ def gpxcomment(points, ref_points, force_timezone=False):
                         (pause_idx, pause_start_at, pause_end_at, pause_duration))
 
             logging.debug("idx = %d, dist = %f, pause_idx = %s" % (idx, dist(point, ref_points[idx]), pause_idx))
+            backstop_idx = pause_idx+1
 
         # came out of pause; now we know how long the pause was
         elif pause_start_at:
@@ -507,7 +509,7 @@ def gpxcomment(points, ref_points, force_timezone=False):
             pause_points.append(point)
             continue
 
-        logging.debug("match point[%03d] with ref[%05d] (dist %f) at = %s" % (pidx, idx, dist(point, ref_points[idx]), ref_points[idx].time))
+        logging.info("gpxcomment: %05d / %05d (%02d%%) => %05d: dist %f @ %s" % (pidx, len(points), (((pidx+1) / len(points)) * 100), idx, dist(point, ref_points[idx]), ref_points[idx].time))
 
         # calculate speed if not specified
         # do it the simple way, but possible to include earth's
