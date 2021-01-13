@@ -434,7 +434,7 @@ Any single point 400+ meters removed from the previous point is removed.
 
 ### `gpxdup`: duplicate the first GPX point
 
-Duplicates the first point in a GPX file. It can shift duplicated points geographically (with `--distance`) and in time (with `--time`).
+Duplicates the first point in a GPX file. It can shift duplicated points laterally (with `--shift`, in units of 1/100000 latitude) and in time (with `--time`).
 
 ```bash
 pipenv run ./gpxdup --duplicate 1 --shift 0 --time 400 file.gpx
