@@ -39,7 +39,6 @@ git clone --recurse-submodules git@github.com:NetworkAndSoftware/gopro2gpx.git
 cd ./gopro2gpx
 cmake .
 make
-cd ..
 
 # add gopro2gpx to PATH; or copy to your own PATH
 mkdir -f ~/bin/
@@ -50,11 +49,13 @@ export PATH=$PATH:/bin/
 brew install adoptopenjdk15
 
 # install GPX Animator [https://github.com/zdila/gpx-animator]
+cd ..
 git clone git@github.com/zdila/gpx-animator
 cd ./gpx-animator
 ./gradlew assemble
 
 # install gopro-map-sync
+cd ..
 git clone git@github.com/thomergil/gopro-map-sync
 cd ./gopro-map-sync
 # On macOs Big Sur (11.0) this prevents python package errors
