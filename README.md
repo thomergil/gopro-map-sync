@@ -108,7 +108,9 @@ At its simplest, `gpxmapmovie` needs to know the location of the GPX Animator .j
 # You need to replace the -j argument and point
 # it at the correct .jar file in the GPX Animator project
 pipenv run ./gpxmapmovie -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.jar \
-    --output movie.mp4 --input GH0100017.MP4 --input GH0100018.MP4
+    --input GH0100017.MP4 \
+    --input GH0100018.MP4 \
+    --output movie.mp4
 ```
 
 The output of this won't be great. The rest of this manual tries to make it better.
@@ -117,20 +119,14 @@ The output of this won't be great. The rest of this manual tries to make it bett
 
 `gpxmapmovie` performs the following steps.
 
-1. Collect all GoPro .mp4 and/or .gpx files from the command line or from the `--files`
-   argument (further explained below).
+1. Collect all GoPro .mp4 and/or .gpx files from the command line or from the `--files` argument (further explained below).
 1. If necessary, generate .gpx files from .mp4 files using `gopro2gpx`.
-1. Apply `gpxclean` to remove erroneous outlier points.
-1. Optionally post-process .gpx files using user-configurable pipes (see `--files` documentation); for example, `gpxdup` might be used here to pad the start
+1. Apply `gpxclean` to remove erroneous outlier points. `gpxmapmovie` will exit if more than one consecutive point is an outlier.
+1. Optionally post-process .gpx files using user-configurable pipes (see `--files` documentation); for example, `gpxdup` might be used here to pad the start of one or more .gpx files.
 1. Concatenate all .gpx files together into one.
-1. If `--reference` was used, run `gpxcomment` to annotate each GPX point with
-   information from the reference GPX file (e.g., from a Garmin or Wahoo). This can be used by GPX Animator to generate meaningful information which is displayed in the comment block.
-1. Compute the length of the video to be generated and optionally divide that
-   number by the `--divide` argument if you plan to accelerate the GoPro footage.
-1. Invoke GPX Animator with the generated .gpx file as `--input` argument, the
-   computed duration as `--total-duration` argument, all arguments from
-   `--args` (if used) and all other unparsed arguments from the `gpxmapmovie`
-   command as command-line arguments.
+1. If `--reference` was used, run `gpxcomment` to annotate each GPX point with information from the reference GPX file (e.g., from a Garmin or Wahoo). This can be used by GPX Animator to generate meaningful information which is displayed in the comment block.
+1. Compute the length of the output video and optionally divide that number by the `--divide` argument if you plan to accelerate the GoPro footage.
+1. Invoke GPX Animator with the generated .gpx file as `--input` argument, the computed duration as `--total-duration` argument, all arguments from `--args` (if used) and all other unparsed arguments from the `gpxmapmovie`  command as command-line arguments.
 
 
 ##  The `gpxmapmovie` command line
@@ -177,7 +173,7 @@ gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone --output o
 
 ## Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
 
-Any command line parameter **not** consumed by `gpxmapmovie` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxmapmovie`; all other arguments are passed to the GPX Animator command line.
+Any command line parameter **not** consumed by `gpxmapmovie` is passed to GPX Animator. In the following example, only `-j` and `--input` are consumed by `gpxmapmovie`; all other arguments are passed to the GPX Animator command line.
 
 ```bash
 pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
