@@ -1,6 +1,6 @@
 # Syncing a GoPro video with a moving map
 
-### Introduction
+## Introduction
 
 This is a set of tools to generate a moving map video that synchronizes **exactly** with GoPro footage. Heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but `gopro-map-sync` uses other tools such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx) and ffmpeg.
 
@@ -16,7 +16,7 @@ In reality, however, GoPro metadata is sloppy; some tweaking will be required. (
 
 For that purpose, `gopro-map-sync` provides a number of additional tools to inspect and manipulate GPX files, if necessary. Specifically, `gpxstats ` display a GPX file in human-readable format, `gpxclean ` removes outlier points, `gpxcat` concatenates GPX files, `gpxtac` intelligently reverses a GPX file, `gpxdup` manipulates the start of a GPX file, `gpxshift` intelligently time shifts a GPX file, `gpxhead` displays the first few elements of a GPX file much like UNIX `head`, `gpxtail` displays the last few elements of a GPX file much like UNIX `tail`. Finally, `gpxcomment` is the most complex: it "zips" together a GoPro GPX file with a second GPX file (e.g., from a Garmin or Wahoo) and annotates the GoPro GPX  with `<cmt>` blocks for later consumption by GPX Animator. Most of these tools can be combined together with UNIX pipes.
 
-### Zero installation with Docker
+## Zero installation with Docker
 
 Assuming you have a GoPro video `bikeride.mp4`  in `/Users/john/Movies/`, run:
 
@@ -28,7 +28,7 @@ docker run --mount="type=bind,source=/Users/john/Movies/,target=/videos/" thomer
 
 The generated video will be at `/Users/john/Movies/movie.mp4`.
 
-### Installation for Mac
+## Installation for Mac
 
 ```bash
 # install python and pipenv
@@ -69,7 +69,7 @@ pipenv install
 pipenv run ./gpxmapmovie --help
 ```
 
-### Installation for Linux
+## Installation for Linux
 
 ```bash
 # TODO: INSTALL adoptopenjdk
@@ -103,7 +103,7 @@ pipenv install
 pipenv run ./gpxmapmovie --help
 ```
 
-### Basic usage
+## Basic usage
 
 At its simplest, `gpxmapmovie` needs to know the location of the GPX Animator .jar file and one or more MP4 files. For example, to create one map movie from two GoPro videos, `GH0100017.MP4` and `GH0100018.MP4`:
 
@@ -117,7 +117,7 @@ pipenv run ./gpxmapmovie -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.j
 
 The output of this won't be great. The rest of this manual tries to make it better.
 
-### `gpxmapmovie`'s order of operations
+## `gpxmapmovie`'s order of operations
 
 `gpxmapmovie` performs the following steps.
 
@@ -137,7 +137,7 @@ The output of this won't be great. The rest of this manual tries to make it bett
    command as command-line arguments.
 
 
-###  The `gpxmapmovie` command line
+##  The `gpxmapmovie` command line
 
 When looking at the `gpxmapmovie` command line it is important to understand that **almost all parameters are passed to GPX Animator**. The only ones that `gpxmapmovie` consumes are: `-j/--jar`, `-f,--files`, `-a,--args`, `-l/--log`, `-r/--reference`, `-i/--input`, and `-z/--force-timezone`. All other command line parameters are passed on to the GPX Animator command line.
 
@@ -179,7 +179,7 @@ gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone --output o
 
 
 
-### Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
+## Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
 
 Any command line parameter **not** consumed by `gpxmapmovie` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxmapmovie`; all other arguments are passed to the GPX Animator command line.
 
@@ -200,7 +200,7 @@ pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
    --output movie.mp4
 ```
 
-### Passing GPX Animator command line options using `--args`
+## Passing GPX Animator command line options using `--args`
 
 In the example above, the command line gets awkwardly long. You can put GPX Animator command line arguments in a file and pass it to `gpxmapmovie` with `--args`.
 
@@ -238,7 +238,7 @@ pipenv run ./gpxmapmovie -j /path/to/gpx-animator.jar \
 
 There are some sample argument files in the project's [samples/](https://github.com/thomergil/gopro-map-sync/tree/main/samples) subdirectory.
 
-### Advanced usage: using  `--files` to list MP4 files
+## Advanced usage: using  `--files` to list MP4 files
 
 Sometimes you need to pass many .MP4 files to `gpxmapmovie` and it becomes
 easier to create a file with filenames in it.
@@ -263,7 +263,7 @@ pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
                          --files files.txt
 ```
 
-### Advanced usage: using  `--files` to use custom GPX files
+## Advanced usage: using  `--files` to use custom GPX files
 
 Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxmapmovie` to use a custom .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxmapmovie` will use that file rather than the output of `gopro2gpx`.
 
@@ -277,7 +277,7 @@ Sometimes the output of `gopro2gpx` is not good enough and you need to manipulat
 ./GH0100018.MP4
 ```
 
-### Advanced usage: using  `--files` to manipulate GPX files
+## Advanced usage: using  `--files` to manipulate GPX files
 
 Sometimes the output of `gopro2gpx` requires only a small fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than running `gpxdup` manually and storing the result in a file, you can tell `gpxmapmovie` to run `gpxdup` on the output of `gopro2gpx`. If the second column starts with a pipe ( `|`), the rest of the line defines one or more functions to perform on the output of `gopro2gpx`.
 
@@ -303,7 +303,7 @@ Any of the functions in `gpxlib.py` can be invoked using this mechanism. (They a
 ./GH0100018.MP4 | gpxdup, duplicate=1
 ```
 
-### Advanced usage: combine with a "real" GPX file
+## Advanced usage: combine with a "real" GPX file
 
 GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro footage, but GPX Animator will not know the correct speed and time, especially if footage was shot in TimeWarp mode. `gpxmapmovie` can "reconstruct" the correct information by copying it from another GPX file with the `--reference` argument. For example:
 
@@ -320,7 +320,7 @@ This process of "annotating" data is messy and imperfect, especially as GoPro fo
 
 Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each GPX track point, which GPX Animator consumes using the `--comment-position` argument.
 
-### Advanced usage: using `--files`, `--args` , `--reference` with Docker
+## Advanced usage: using `--files`, `--args` , `--reference` with Docker
 
 Docker images cannot access files on your disk unless you mount the containing folder with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxmapmovie` invocation.
 
@@ -355,11 +355,11 @@ Note that `2020-08-17.txt` needs to reference MP4 files as if they were located 
 
 If you get a `java.lang.OutOfMemoryError: Java heap space` error, you may need to extra RAM resources for Docker.
 
-### Additional tools/functions in `gopro-map-sync`
+## Additional tools/functions in `gopro-map-sync`
 
 These tools are available on the command line, but also as functions that you can invoke in `--files`.
 
-#### `gpxcat`: concatenate files
+### `gpxcat`: concatenate files
 
 In its simplest forms, `gpxcat` concatenates multiple GPX files together.
 
@@ -391,7 +391,7 @@ pipenv run ./gpxcat --killgap --stretch 10 file1.gpx file2.gpx
 
 This multiplies the length of each time gap by 10x.
 
-#### `gpxtac`: invert GPX points
+### `gpxtac`: invert GPX points
 
 In its simplest form, `gpxtac` inverses all points in a file:
 
@@ -405,7 +405,7 @@ However, this also inverts timestamps, meaning that time is going backwards. To 
 pipenv run ./gpxtac --time file1.gpx
 ```
 
-#### `gpxhead` and `gpxtail`
+### `gpxhead` and `gpxtail`
 
 Like, UNIX `head` and `tail`, both can take a numeric flag to indicate the number of lines at the start/end of the file to display:
 
@@ -414,7 +414,7 @@ pipenv run ./gpxhead -20 file.gpx
 pipenv run ./gpxtail -5 file.gpx
 ```
 
-#### `gpxclean`: remove outliers
+### `gpxclean`: remove outliers
 
 Removes outlier points.
 
@@ -436,7 +436,7 @@ pipenv run ./gpxclean --distance 400 file.gpx
 
 Any single point 400+ meters removed from the previous point is removed.
 
-#### `gpxdup`: duplicate the first GPX point
+### `gpxdup`: duplicate the first GPX point
 
 Duplicates the first point in a GPX file. It can shift duplicated points geographically (with `--distance`) and in time (with `--time`).
 
@@ -454,7 +454,7 @@ For example, to remove all points more than 200m away from the first point in a 
 pipenv run ./gpxdup --smart-strip reference.gpx --smart-strip-radius 200 --smart-duplicate file.gpx
 ```
 
-#### `gpxshift`: time shift all GPX points
+### `gpxshift`: time shift all GPX points
 
 Time shifts all points in a GPX file. The shift can be relative (negative or positive). It can also be an absolute start time or end time.
 
@@ -476,7 +476,7 @@ The set the last timestamp to `2021-01-02T14:33:45.462000Z`:
 pipenv run ./gpxshift --last '2021-01-02T14:33:45.462000Z' file.gpx
 ```
 
-#### `gpxcomment`: annotate a GoPro GPX file with data from another GPX file
+### `gpxcomment`: annotate a GoPro GPX file with data from another GPX file
 
 Ingests one or more GoPro GPX files and an additional GPX file (with `--reference`) that came from a "real" tracking device, such as a Wahoo or Garmin. The result is a GoPro GPX file with a `<cmt>` block on each GPX point that can be consumed by GPX Animator for the `--comment-position` functionality.
 
@@ -486,7 +486,7 @@ For example, to annotate `file.gpx` with data from `wahoo.gpx`:
 pipenv run ./gpxcomment --reference wahoo.gpx file.gpx
 ```
 
-#### `gpxstats`: human readable GPX
+### `gpxstats`: human readable GPX
 
 To inspect a GPX file:
 
@@ -496,33 +496,33 @@ pipenv run ./gpxstats file.gpx
 
 Visual tools are better suited for this, however.
 
-### Common synchronization problems and solutions
+## Common synchronization problems and solutions
 
 There are common problems that cause GoPro footage and map video to be out of sync. Here is a list of common problems and solutions.
 
-##### The footage is immediately out of sync
+#### The footage is immediately out of sync
 
 The GoPro takes a while to obtain a GPS lock. Until it does, it either does not record any GPX points or it records wildly inaccurate GPX points. Use a visual GPX editor or `gpxdup` and/or `gpxshift` to remove those points and/or (re)insert them. When editing, make sure timestamps remain smooth relative to the rest of the file.
 
 The first time you turn on a GoPro to record footage, it is advisable to turn it on, let it obtain GPS lock for a few minutes. Record a 60-second video. Turn it off. It is now ready for use.
 
-**The footage gets out of sync**
+#### **The footage gets out of sync**
 
 This happens on boundaries between MP4 files. My GoPro HERO 8 Black consistently drops 2 GPX points at the start of each movie. In the `--files` examples above you can see frequent examples of `| gpxdup, duplicate=2` to duplicate the first GPX point twice (for a total of 3 points) to smooth out this problem.
 
-##### The map gets ahead of the footage
+#### The map movie gets ahead of the GoPro footage
 
 This means GPX points are missing at the start of the file. Use `gpxdup, duplicate=N` in the `--files` file argument to duplicate points at the start of the GPX file. Start with N=1 or N=2.
 
-**The map gets behind of the GoPro**
+#### **The map movie lags behind the GoPro footage**
 
 This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` in the `--files` file argument to strip points from the start of the GPX file. Start with N=1 or N=2.
 
-**There is a crazy outlier point that screws everything up**
+#### **There is a crazy outlier point that screws everything up**
 
 Run the GPX file through `gpxclean`. Usually it's a single outlier point, but sometimes it's more, in which case you need to set `--tolerance` to a higher number.
 
-##### It crashes
+#### It crashes
 
 Please file an issue! Thank you.
 
