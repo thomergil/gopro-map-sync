@@ -138,20 +138,20 @@ The simplest command line requires only `-j` and `--output`and, of course, one o
 
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.mp4 [-i file2.mp4 [...]]
+gpxmapmovie -j gpx-animator.jar --output output.mp4 -i file1.mp4 [-i file2.mp4 [...]]
 ```
 
 But you can also pass .gpx files. Note that these need to be .gpx files that were extracted from .mp4 files using `gopro2gpx`. That is the only way to ensure the GoPro footage and the map movie remain synchronized.
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.gpx [-i file2.gpx [...]]
+gpxmapmovie -j gpx-animator.jar --output output.mp4 -i file1.gpx [-i file2.gpx [...]]
 ```
 
 Note that you can not mix .mp4 and .gpx files with `--input` or `-i` on the command line:
 
 ```bash
 # THIS WILL NOT WORK; CANNOT MIX .mp4 AND .gpx ARGUMENTS; MUST USE --file INSTEAD
-gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.gpx -i file2.mp4 # <-- BAD
+gpxmapmovie -j gpx-animator.jar --output output.mp4 -i file1.gpx -i file2.mp4 # <-- BAD
 ```
 
 If you want to mix .mp4 and .gpx arguments you need to use `--file`; see below.
@@ -159,7 +159,7 @@ If you want to mix .mp4 and .gpx arguments you need to use `--file`; see below.
 If you want `gpxmapmovie` to infer the correct time and speed from another GPX file (for example, made by a Garmin or Wahoo), you can pass `--reference` to that file. For example:
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --output output.mp4 -i file1.mp4
+gpxmapmovie -j gpx-animator.jar --reference wahoo.gpx --output output.mp4 -i file1.mp4
 ```
 
 Finally, if you cross a timezone and you want the reported time to always be correct, you can pass the `--force-timezone` option. `gpxmapmovie`'s default behavior is to only look up the timezone of the first GPX point and apply that to all subsequent GPX points.
@@ -167,7 +167,7 @@ Finally, if you cross a timezone and you want the reported time to always be cor
 Note that **this will make the gpxcomment stage very slow** as a timezone lookup occurs for each point.
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone --output output.mp4 -i file1.mp4
+gpxmapmovie -j gpx-animator.jar --reference wahoo.gpx --force-timezone --output output.mp4 -i file1.mp4
 ```
 
 
