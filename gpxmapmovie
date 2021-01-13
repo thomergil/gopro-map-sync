@@ -18,6 +18,7 @@ import gpxlib
 GOPRO2GPX = "gopro2gpx"
 DURATION_FIX = -40 # milliseconds from calculated total duration
 OUTFILE = "/tmp/gpxmapmovie.gpx"
+DEFAULT_LOG_LEVEL = 'info'
 
 def main():
     parser = argparse.ArgumentParser(description="A wrapper around GPX Animator [https://gpx-animator.app]",
@@ -34,15 +35,14 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     parser.add_argument("-a", "--args", help="Default args for GPX Animator")
     parser.add_argument("-f", "--files", help="See FILES below")
     parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file", required=True)
-    parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)")
+    parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
     parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
+    parser.add_argument("-i", "--input", help="Path to output", action="append")
     parser.add_argument("-z", "--force-timezone", help="Only when used with --reference: force per-point timezone lookup", action="store_true")
     args, pass_args = parser.parse_known_args()
 
     # logging
-    numeric_level = 20 # info
-    if args.log:
-        numeric_level = getattr(logging, args.log.upper(), None)
+    numeric_level = getattr(logging, args.log.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % args.log)
     logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
@@ -113,13 +113,13 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     # no --files argument: read files from command line, but stop when encountering something that
     # isn't a file.
     else:
-        while len(pass_args) > 0:
-            p0 = pass_args[0]
+        while len(args.input) > 0:
+            p0 = args.input[0]
 
             if p0.lower().endswith(".mp4"):
-                mp4_files.append(pass_args.pop(0))
+                mp4_files.append(args.input.pop(0))
             elif p0.lower().endswith(".gpx"):
-                gpx_files.append(pass_args.pop(0))
+                gpx_files.append(args.input.pop(0))
             else:
                 break
 

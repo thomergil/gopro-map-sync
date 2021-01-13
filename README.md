@@ -21,7 +21,9 @@ For that purpose, `gopro-map-sync` provides a number of additional tools to insp
 Assuming you have a GoPro video `bikeride.mp4`  in `/Users/john/Movies/`, run:
 
 ```bash
-docker run --mount="type=bind,source=/Users/john/Movies/,target=/videos/" thomergil/gpxmapmovie --output /videos/movie.mp4 /videos/bikeride.mp4
+docker run --mount="type=bind,source=/Users/john/Movies/,target=/videos/" thomergil/gpxmapmovie \
+           --input /videos/bikeride.mp4 \
+           --output /videos/movie.mp4
 ```
 
 The generated video will be at `/Users/john/Movies/movie.mp4`.
@@ -108,7 +110,8 @@ At its simplest, `gpxmapmovie` needs to know the location of the GPX Animator .j
 ```bash
 # You need to replace the -j argument and point
 # it at the correct .jar file in the GPX Animator project
-pipenv run ./gpxmapmovie -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.jar  --output movie.mp4 GH0100017.MP4 GH0100018.MP4
+pipenv run ./gpxmapmovie -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.jar \
+    --output movie.mp4 --input GH0100017.MP4 --input GH0100018.MP4
 ```
 
 The output of this won't be great. The rest of this manual tries to make it better.
@@ -135,24 +138,26 @@ The output of this won't be great. The rest of this manual tries to make it bett
 
 ###  The `gpxmapmovie` command line
 
-The simplest command line requires only `-j` and `-o` and, of course, input files, which can be either .mp4 files or .gpx files. Here is an example with .mp4 files.
+When looking at the `gpxmapmovie` command line it is important to understand that **almost all parameters are passed to GPX Animator**. The only ones that `gpxmapmovie` consumes are: `-j/--jar`, `-f,--files`, `-a,--args`, `-l/--log`, `-r/--reference`, `-i/--input`, and `-z/--force-timezone`. All other command line parameters are passed on to the GPX Animator command line.
+
+The simplest command line requires only `-j` and `--output`and, of course, one ore more input files (with `-i` or `--input`), which can be either .mp4 files or .gpx files. (Note that `-o` is **not** a valid command line parameter, because it is passed on to GPX Animator, which does not accept  `-o`.) Here is an example with .mp4 files.
 
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.mp4 [file2.mp4 [...]]
+gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.mp4 [-i file2.mp4 [...]]
 ```
 
 But you can also pass .gpx files. Note that these need to be .gpx files that were extracted from .mp4 files using `gopro2gpx`. That is the only way to ensure the GoPro footage and the map movie remain synchronized.
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.gpx [file2.gpx [...]]
+gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.gpx [-i file2.gpx [...]]
 ```
 
-Note that you can not mix .mp4 and .gpx files on the command line:
+Note that you can not mix .mp4 and .gpx files with `--input` or `-i` on the command line:
 
 ```bash
 # THIS WILL NOT WORK; CANNOT MIX .mp4 AND .gpx ARGUMENTS; MUST USE --file INSTEAD
-gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.gpx file2.mp4 # <-- BAD
+gpxmapmovie -j gpxmapmovie.jar --output output.mp4 -i file1.gpx -i file2.mp4 # <-- BAD
 ```
 
 If you want to mix .mp4 and .gpx arguments you need to use `--file`; see below.
@@ -160,7 +165,7 @@ If you want to mix .mp4 and .gpx arguments you need to use `--file`; see below.
 If you want `gpxmapmovie` to infer the correct time and speed from another GPX file (for example, made by a Garmin or Wahoo), you can pass `--reference` to that file. For example:
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx -o output.mp4 file1.mp4 [file2.mp4 [...]]
+gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --output output.mp4 -i file1.mp4
 ```
 
 Finally, if you cross a timezone and you want the reported time to always be correct, you can pass the `--force-timezone` option. `gpxmapmovie`'s default behavior is to only look up the timezone of the first GPX point and apply that to all subsequent GPX points.
@@ -168,7 +173,7 @@ Finally, if you cross a timezone and you want the reported time to always be cor
 Note that **this will make the gpxcomment stage very slow** as a timezone lookup occurs for each point.
 
 ```bash
-gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone -o output.mp4 file1.mp4 [file2.mp4 [...]]
+gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone --output output.mp4 -i file1.mp4
 ```
 
 
@@ -189,8 +194,9 @@ pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
    --attribution-position hidden \
    --information-position hidden \
    --comment-position 'bottom left' \
-   --output movie.mp4 \
-   GH0100017.MP4 GH0100018.MP4
+   --input GH0100017.MP4 \
+   --input GH0100018.MP4 \
+   --output movie.mp4
 ```
 
 ### Passing GPX Animator command line options using `--args`
@@ -225,7 +231,8 @@ Then invoke `gpxmapmovie` with an `--args` argument:
 # it at the .jar file in the GPX Animator project
 pipenv run ./gpxmapmovie -j /path/to/gpx-animator.jar \
                          --args args.txt \
-                         GH0100017.MP4 GH0100018.MP4
+                         --input GH0100017.MP4 \
+                         --input GH0100018.MP4
 ```
 
 There are some sample argument files in the project's [samples/](https://github.com/thomergil/gopro-map-sync/tree/main/samples) subdirectory.
