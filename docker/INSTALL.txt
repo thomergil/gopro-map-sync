@@ -1,6 +1,6 @@
 # git submodule update --init --recursive
 git submodule update --recursive
 docker login --username=thomergil
-docker build -t gpxanimator -f docker/Dockerfile .
-docker tag gpxanimator:latest thomergil/gpxanimator:latest
-docker push thomergil/gpxanimator:latest
+docker build -t gpxmapmovie -f docker/Dockerfile .
+docker tag gpxmapmovie:latest thomergil/gpxmapmovie:latest
+docker push thomergil/gpxmapmovie:latest

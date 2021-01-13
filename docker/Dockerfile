@@ -23,7 +23,7 @@ COPY Pipfile .
 RUN pipenv install
 COPY __init__.py .
 COPY gpxlib.py .
-COPY gpxanimator .
+COPY gpxmapmovie .
 
 # ENTRYPOINT ["/bin/bash"]
-ENTRYPOINT ["/usr/bin/pipenv", "run", "/src/gopro-map-sync/gpxanimator", "-j", "/src/gpx-animator-1.6/build/libs/gpx-animator-1.6.0-all.jar"]
+ENTRYPOINT ["/usr/bin/pipenv", "run", "/src/gopro-map-sync/gpxmapmovie", "-j", "/src/gpx-animator-1.6/build/libs/gpx-animator-1.6.0-all.jar"]

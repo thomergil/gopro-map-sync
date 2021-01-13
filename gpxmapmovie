@@ -17,7 +17,7 @@ import gpxlib
 
 GOPRO2GPX = "gopro2gpx"
 DURATION_FIX = -40 # milliseconds from calculated total duration
-OUTFILE = "/tmp/gpxanimator.gpx"
+OUTFILE = "/tmp/gpxmapmovie.gpx"
 
 def main():
     parser = argparse.ArgumentParser(description="A wrapper around GPX Animator [https://gpx-animator.app]",
@@ -56,7 +56,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     # The first column is an absolute or relative path to an .mp4 file.
     # (Relative path is relative to the file itself.)
     #
-    # If nothing else is specified on the line, gpxanimator will generate a
+    # If nothing else is specified on the line, gpxmapmovie will generate a
     # .gpx file from the given .mp4 file.
     #
     # An optional second column is either the absolute or relative path (i.e.,

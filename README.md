@@ -10,7 +10,7 @@ This is a set of tools to generate a moving map video that synchronizes **exactl
 
 `gopro-map-sync` leverages telemetry data (specifically, GPS location) stored in GoPro MP4 files. It can handle footage recorded in GoPro TimeWarp mode. It can optionally reference a GPX file (for example, from a Garmin or Wahoo) file to annotate the video with additional information.
 
-Ideally, it all works out of the box with `gpxanimator`; see below for a simple example.
+Ideally, it all works out of the box with `gpxmapmovie`; see below for a simple example.
 
 In reality, however, GoPro metadata is sloppy; some tweaking will be required. (See "Common synchronization problems" at the end of this document.)
 
@@ -21,7 +21,7 @@ For that purpose, `gopro-map-sync` provides a number of additional tools to insp
 Assuming you have a GoPro video `bikeride.mp4`  in `/Users/john/Movies/`, run:
 
 ```bash
-docker run --mount="type=bind,source=/Users/john/Movies/,target=/videos/" thomergil/gpxanimator --output /videos/movie.mp4 /videos/bikeride.mp4
+docker run --mount="type=bind,source=/Users/john/Movies/,target=/videos/" thomergil/gpxmapmovie --output /videos/movie.mp4 /videos/bikeride.mp4
 ```
 
 The generated video will be at `/Users/john/Movies/movie.mp4`.
@@ -64,7 +64,7 @@ export SYSTEM_VERSION_COMPAT=1
 pipenv install
 
 # test that it works
-pipenv run ./gpxanimator --help
+pipenv run ./gpxmapmovie --help
 ```
 
 ### Installation for Linux
@@ -97,25 +97,25 @@ cd ./gopro-map-sync
 pipenv install
 
 # test that it works
-pipenv run ./gpxanimator --help
+pipenv run ./gpxmapmovie --help
 ```
 
 ### Basic usage
 
-At its simplest, `gpxanimator` needs to know the location of the GPX Animator .jar file and one or more MP4 files. For example, to create one map movie from two GoPro videos, `GH0100017.MP4` and `GH0100018.MP4`:
+At its simplest, `gpxmapmovie` needs to know the location of the GPX Animator .jar file and one or more MP4 files. For example, to create one map movie from two GoPro videos, `GH0100017.MP4` and `GH0100018.MP4`:
 
 
 ```bash
 # You need to replace the -j argument and point
 # it at the correct .jar file in the GPX Animator project
-pipenv run ./gpxanimator -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.jar  --output movie.mp4 GH0100017.MP4 GH0100018.MP4
+pipenv run ./gpxmapmovie -j ~/src/gpx-animator/build/libs/gpx-animator-1.6-all.jar  --output movie.mp4 GH0100017.MP4 GH0100018.MP4
 ```
 
 The output of this won't be great. The rest of this manual tries to make it better.
 
-### `gpxanimator`'s order of operations
+### `gpxmapmovie`'s order of operations
 
-`gpxanimator` performs the following steps.
+`gpxmapmovie` performs the following steps.
 
 1. Collect all GoPro .mp4 and/or .gpx files from the command line or from the `--files`
    argument (further explained below).
@@ -130,25 +130,25 @@ The output of this won't be great. The rest of this manual tries to make it bett
    number by the `--divide` argument if you plan to accelerate the GoPro footage.
 1. Invoke GPX Animator with the generated .gpx file as `--input` argument, the
    computed duration as `--total-duration` argument, all arguments from
-   `--args` (if used) and all other unparsed arguments from the `gpxanimator`
+   `--args` (if used) and all other unparsed arguments from the `gpxmapmovie`
    command as command-line arguments.
 
 
-###  `gpxanimator` command line options
+###  `gpxmapmovie` command line options
 
 The simplest command line invocation is:
 
 
 ```bash
-gpxanimator -j gpxanimator.jar -o output.mp4 file1.mp4 [file2.mp4 [...]]
+gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.mp4 [file2.mp4 [...]]
 ```
 
-### Passing additional arguments to GPX Animator via `gpxanimator`'s command line
+### Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
 
-Any command line parameter **not** consumed by `gpxanimator` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxanimator`; all other arguments are passed to the GPX Animator command line.
+Any command line parameter **not** consumed by `gpxmapmovie` is passed to GPX Animator. In the following example, only the `-j` argument and the `.MP4` file arguments are consumed by `gpxmapmovie`; all other arguments are passed to the GPX Animator command line.
 
 ```bash
-pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
+pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
    --tms-url-template 'http://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={zoom}' \
    --background-map-visibility 1.0 \
    --viewport-height 640 \
@@ -165,7 +165,7 @@ pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
 
 ### Passing GPX Animator command line options using `--args`
 
-In the example above, the command line gets awkwardly long. You can put GPX Animator command line arguments in a file and pass it to `gpxanimator` with `--args`.
+In the example above, the command line gets awkwardly long. You can put GPX Animator command line arguments in a file and pass it to `gpxmapmovie` with `--args`.
 
 `args.txt`:
 
@@ -188,12 +188,12 @@ In the example above, the command line gets awkwardly long. You can put GPX Anim
 --output output.mp4
 ```
 
-Then invoke `gpxanimator` with an `--args` argument:
+Then invoke `gpxmapmovie` with an `--args` argument:
 
 ```bash
 # You need to replace the -j argument and point
 # it at the .jar file in the GPX Animator project
-pipenv run ./gpxanimator -j /path/to/gpx-animator.jar \
+pipenv run ./gpxmapmovie -j /path/to/gpx-animator.jar \
                          --args args.txt \
                          GH0100017.MP4 GH0100018.MP4
 ```
@@ -202,7 +202,7 @@ There are some sample argument files in the project's [samples/](https://github.
 
 ### Advanced usage: using  `--files` to list MP4 files
 
-Sometimes you need to pass many .MP4 files to `gpxanimator` and it becomes
+Sometimes you need to pass many .MP4 files to `gpxmapmovie` and it becomes
 easier to create a file with filenames in it.
 
 ```
@@ -215,19 +215,19 @@ easier to create a file with filenames in it.
 ./GH0100018.MP4
 ```
 
-Then invoke `gpxanimator` as follows:
+Then invoke `gpxmapmovie` as follows:
 
 ```bash
 # You need to replace the -j argument and point
 # it at the .jar file in the GPX Animator project
-pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
+pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
                          --args args.txt \
                          --files files.txt
 ```
 
 ### Advanced usage: using  `--files` to use custom GPX files
 
-Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxanimator` to use a custom .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxanimator` will use that file rather than the output of `gopro2gpx`.
+Sometimes the output of `gopro2gpx` is not good enough and you need to manipulate it. You can tell `gpxmapmovie` to use a custom .GPX file. For example, if you have a file `GH0100017-custom.gpx` which you manipulated to better synchronize with `GH0100017.MP4`, you can specify it in the second column. `gpxmapmovie` will use that file rather than the output of `gopro2gpx`.
 
 ```
 #
@@ -241,7 +241,7 @@ Sometimes the output of `gopro2gpx` is not good enough and you need to manipulat
 
 ### Advanced usage: using  `--files` to manipulate GPX files
 
-Sometimes the output of `gopro2gpx` requires only a small fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than running `gpxdup` manually and storing the result in a file, you can tell `gpxanimator` to run `gpxdup` on the output of `gopro2gpx`. If the second column starts with a pipe ( `|`), the rest of the line defines one or more functions to perform on the output of `gopro2gpx`.
+Sometimes the output of `gopro2gpx` requires only a small fix. For example, my GoPro Hero 8 Black consistently drops the first 2 points in a GPX track when in TimeWarp Auto mode. `gpxdup` can fix that problem by duplicating the first point. Rather than running `gpxdup` manually and storing the result in a file, you can tell `gpxmapmovie` to run `gpxdup` on the output of `gopro2gpx`. If the second column starts with a pipe ( `|`), the rest of the line defines one or more functions to perform on the output of `gopro2gpx`.
 
 ```
 #
@@ -267,12 +267,12 @@ Any of the functions in `gpxlib.py` can be invoked using this mechanism. (They a
 
 ### Advanced usage: combine with a "real" GPX file
 
-GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro footage, but GPX Animator will not know the correct speed and time, especially if footage was shot in TimeWarp mode. `gpxanimator` can "reconstruct" the correct information by copying it from another GPX file with the `--reference` argument. For example:
+GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro footage, but GPX Animator will not know the correct speed and time, especially if footage was shot in TimeWarp mode. `gpxmapmovie` can "reconstruct" the correct information by copying it from another GPX file with the `--reference` argument. For example:
 
 ```bash
 # You need to replace the -j argument and point
 # it at the .jar file in the GPX Animator project
-pipenv run ./gpxanimator -j path/to/gpx-animator.jar \
+pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
                          --args args.txt \
                          --files files.txt \
                          --reference wahoo.gpx \
@@ -285,7 +285,7 @@ Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each
 
 ### Advanced usage: using `--files`, `--args` , `--reference` with Docker
 
-Docker images cannot access files on your disk unless you mount the containing folder with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxanimator` invocation.
+Docker images cannot access files on your disk unless you mount the containing folder with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxmapmovie` invocation.
 
 Note, this may be **slow**:
 
@@ -294,7 +294,7 @@ Note, this may be **slow**:
 docker run \
   --mount="type=bind,source=/Users/john/Movies/,target=/videos/" \
   --mount="type=bind,source=/Users/john/save/,target=/data/" \
-  -t gpxanimator:latest \
+  -t gpxmapmovie:latest \
   --log info \
   --files /data/2020-08-17.txt \
   --args /data/args.txt \
