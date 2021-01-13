@@ -47,6 +47,9 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         raise ValueError('Invalid log level: %s' % args.log)
     logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
 
+    if not os.path.isfile(args.jar):
+        sys.exit("--jar parameter %s not found" % (args.jar))
+
     #
     # Read instructions from --files argument.
     #
