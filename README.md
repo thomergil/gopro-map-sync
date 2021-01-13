@@ -454,10 +454,16 @@ pipenv run ./gpxdup --smart-strip reference.gpx --smart-strip-radius 200 --smart
 
 Time shifts all points in a GPX file. The shift can be relative (negative or positive). It can also be an absolute start time or end time.
 
-To time shift all points by 20 seconds:
+Relative value is in milliseconds. For example, to time shift all GPX points 20 seconds forward in time (i.e, later):
 
 ```bash
-pipenv run ./gpxshift +20 file.gpx
+pipenv run ./gpxshift +20000 file.gpx
+```
+
+To time shift all GPX points 500 milliseconds backwards in time (i.e, earlier):
+
+```bash
+pipenv run ./gpxshift -500 file.gpx
 ```
 
 To set the first timestamp to `2021-01-02T14:33:45.462000Z`:
