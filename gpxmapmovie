@@ -291,8 +291,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             cmd.append(value)
 
     # --input argument to GPXA
-    for idx, gpx_file in enumerate(gpx_files):
-        cmd += ['--input', OUTFILE]
+    cmd += ['--input', OUTFILE]
 
     if args.divide:
         total_duration /= float(args.divide)
