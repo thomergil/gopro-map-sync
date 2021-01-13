@@ -538,4 +538,4 @@ Please file an issue! Thank you.
 
 * https://github.com/JuanIrache/gopro-telemetry (code that runs https://goprotelemetryextractor.com/free/), a tool similar to `gopro2gpx`, but not suitable for this project because it does not work correctly for TimeWarp'd footage.
 
-* [GPX Editor](https://apps.apple.com/nl/app/gpx-editor/id924782627?mt=12), a tool to manipulate GPX files for Mac. I don't love it, but it does the job.I
+* [GPX Editor](https://apps.apple.com/nl/app/gpx-editor/id924782627?mt=12), a tool to manipulate GPX files for Mac. I don't love it, but it does the job.
