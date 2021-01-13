@@ -6,6 +6,7 @@ import geopy.distance
 import logging
 import copy
 import dateparser
+from timezonefinder import TimezoneFinder
 from datetime import datetime, timedelta
 from dateutil import tz
 
@@ -289,6 +290,16 @@ PAUSE_THRESHOLD = 20 # seconds
 PAUSE_SNAP = 100 # meters
 
 def find_pauses(ref_points):
+    """ Returns an array with the start indices of pauses.
+
+    Parameters:
+        ref_points (array of gpxpy.gpx.GPX):
+
+    Returns:
+        Array of indices into ref_points, such that the corresponding GPX point
+        is the last recorded point before a pause. A time span is considered a
+        pause if it exceeds PAUSE_THRESHOLD seconds.
+    """
     pauses = []
     prev_point = ref_points[0]
     for idx, point in enumerate(ref_points):
@@ -317,25 +328,33 @@ def snap_to_pause(pauses, ref_points, idx):
 
     return minidx
 
-def create_modified_point(point, lat, lng, time, timezone, speed_in_ms, cumulative_dist):
-    from_zone = tz.tzutc()
+def create_modified_point(point, time, to_zone_str, speed_in_ms, cumulative_dist):
+    """ Creates a new GPX point with an informative <cmt> block
 
+    Parameters:
+        point (gpxpy.gpx.GPX): a pre-existing GPX point
+        time (datetime): time of new GPX point
+        to_zone_str (string): the time zone of the new GPX point, based on lat,lng, or None to force a lookup
+        speed_in_ms (float): speed in m/s
+        cumulative_dist (float): the cumulative distance so far
+
+    Returns:
+        A GPX point with a <cmt> block
+    """
     # convert speed from m/s to km/h
     speed_in_kmh = speed_in_ms * 3.6
 
-    # convert time to timezone of lat/lng
-    if timezone:
-        to_zone_str = timezone
-    else:
-        # used for time zone mangling
+    # force a timezone lookup for this point
+    if not to_zone_str:
         tf = TimezoneFinder()
-        to_zone_str = tf.timezone_at(lng=lng, lat=lat)
+        to_zone_str = tf.timezone_at(lng=point.longitude, lat=point.latitude)
 
+    # convert point time to timezone
     to_zone = tz.gettz(to_zone_str)
-    utc_time = time.replace(tzinfo=from_zone)
+    utc_time = time.replace(tzinfo=tz.tzutc())
     time = utc_time.astimezone(to_zone)
 
-    # construct <cmt> block for <trkpt> and add to segment
+    # construct <cmt> block for <trkpt>
     point.comment = "%s\n%s\n%5.2f km\n%d km/h" % (time.strftime("%b %-d, %Y"), time.strftime("%H:%M:%S"), cumulative_dist, speed_in_kmh)
     logging.debug("segment_points.append(%s)" % (str(point)))
     logging.debug("comment:\n%s" % (str(point.comment)))
@@ -400,7 +419,7 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
 
 
 
-def gpxcomment(points, ref_points, timezone=None):
+def gpxcomment(points, ref_points, force_timezone=False):
 
     # build map of all pause starts in reference
     pauses = find_pauses(ref_points)
@@ -409,6 +428,12 @@ def gpxcomment(points, ref_points, timezone=None):
     # go through all GoPro GPX files
     pause_idx, pause_start_at, pause_duration, pause_points = None, None, None, []
     idx, prev_idx, cumulative_dist = -1, 0, 0
+
+    # look up timezone of first point
+    to_zone_str = None
+    if not force_timezone:
+        tf = TimezoneFinder()
+        to_zone_str = tf.timezone_at(lng=points[0].longitude, lat=points[0].latitude)
 
     xpoints, processed_pauses = [], []
     for pidx, point in enumerate(points):
@@ -471,7 +496,7 @@ def gpxcomment(points, ref_points, timezone=None):
             for buffered_idx, buffered_point in enumerate(pause_points):
                 time = pause_start_at + timedelta(seconds=((float(pause_duration) / float(len(pause_points))) * buffered_idx))
                 logging.debug("Fake time for buffered point: %s" % (time))
-                mpoint = create_modified_point(buffered_point, buffered_point.latitude, buffered_point.longitude, time, timezone, 0, cumulative_dist)
+                mpoint = create_modified_point(buffered_point, time, to_zone_str, 0, cumulative_dist)
                 xpoints.append(mpoint)
             pause_start_at = None
             pause_points = []
@@ -503,7 +528,7 @@ def gpxcomment(points, ref_points, timezone=None):
                 cumulative_dist += dist(ref_points[i], ref_points[i+1])
         prev_idx = idx
 
-        mpoint = create_modified_point(point, ref_points[idx].latitude, ref_points[idx].longitude, ref_points[idx].time, timezone, speed, cumulative_dist)
+        mpoint = create_modified_point(point, ref_points[idx].time, to_zone_str, speed, cumulative_dist)
         xpoints.append(mpoint)
 
     return xpoints

@@ -124,8 +124,7 @@ The output of this won't be great. The rest of this manual tries to make it bett
 1. Optionally post-process .gpx files using user-configurable pipes (see `--files` documentation); for example, `gpxdup` might be used here to pad the start
 1. Concatenate all .gpx files together into one.
 1. If `--reference` was used, run `gpxcomment` to annotate each GPX point with
-   information from the reference GPX file (e.g., from a Garmin or Wahoo). This can be used by GPX Animator to generate meaningful information which is displayed in the comment block. It is **strongly recommended** to use the `--timezone` argument, when
-   using `--reference`.
+   information from the reference GPX file (e.g., from a Garmin or Wahoo). This can be used by GPX Animator to generate meaningful information which is displayed in the comment block.
 1. Compute the length of the video to be generated and optionally divide that
    number by the `--divide` argument if you plan to accelerate the GoPro footage.
 1. Invoke GPX Animator with the generated .gpx file as `--input` argument, the
@@ -134,14 +133,45 @@ The output of this won't be great. The rest of this manual tries to make it bett
    command as command-line arguments.
 
 
-###  `gpxmapmovie` command line options
+###  The `gpxmapmovie` command line
 
-The simplest command line invocation is:
+The simplest command line requires only `-j` and `-o` and, of course, input files, which can be either .mp4 files or .gpx files. Here is an example with .mp4 files.
 
 
 ```bash
 gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.mp4 [file2.mp4 [...]]
 ```
+
+But you can also pass .gpx files. Note that these need to be .gpx files that were extracted from .mp4 files using `gopro2gpx`. That is the only way to ensure the GoPro footage and the map movie remain synchronized.
+
+```bash
+gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.gpx [file2.gpx [...]]
+```
+
+Note that you can not mix .mp4 and .gpx files on the command line:
+
+```bash
+# THIS WILL NOT WORK; CANNOT MIX .mp4 AND .gpx ARGUMENTS; MUST USE --file INSTEAD
+gpxmapmovie -j gpxmapmovie.jar -o output.mp4 file1.gpx file2.mp4 # <-- BAD
+```
+
+If you want to mix .mp4 and .gpx arguments you need to use `--file`; see below.
+
+If you want `gpxmapmovie` to infer the correct time and speed from another GPX file (for example, made by a Garmin or Wahoo), you can pass `--reference` to that file. For example:
+
+```bash
+gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx -o output.mp4 file1.mp4 [file2.mp4 [...]]
+```
+
+Finally, if you cross a timezone and you want the reported time to always be correct, you can pass the `--force-timezone` option. `gpxmapmovie`'s default behavior is to only look up the timezone of the first GPX point and apply that to all subsequent GPX points.
+
+Note that **this will make the gpxcomment stage very slow** as a timezone lookup occurs for each point.
+
+```bash
+gpxmapmovie -j gpxmapmovie.jar --reference wahoo.gpx --force-timezone -o output.mp4 file1.mp4 [file2.mp4 [...]]
+```
+
+
 
 ### Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
 
@@ -275,11 +305,10 @@ GPX data extracted from GoPro MP4 with `gopro2gpx` synchronizes well with GoPro 
 pipenv run ./gpxmapmovie -j path/to/gpx-animator.jar \
                          --args args.txt \
                          --files files.txt \
-                         --reference wahoo.gpx \
-                         --timezone Europe/Amsterdam
+                         --reference wahoo.gpx
 ```
 
-When you use `--reference`, it is **strongly recommended**, you also use the `--timezone` argument. (Otherwise there will be a timezone lookup for each GPX point, which dramatically impacts performance.) This process of "annotating" data is messy and imperfect, especially as GoPro footage is interrupted (for example, for battery changes) and the Garmin or Wahoo pauses when standing still.
+This process of "annotating" data is messy and imperfect, especially as GoPro footage is interrupted (for example, for battery changes) and the Garmin or Wahoo pauses when standing still.
 
 Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each GPX track point, which GPX Animator consumes using the `--comment-position` argument.
 
@@ -300,7 +329,6 @@ docker run \
   --args /data/args.txt \
   --divide 4 \
   --reference /data/2020-08-17.gpx \
-  --timezone Europe/Amsterdam \
   --output /videos/movie.mp4
 ```
 
@@ -447,10 +475,8 @@ Ingests one or more GoPro GPX files and an additional GPX file (with `--referenc
 For example, to annotate `file.gpx` with data from `wahoo.gpx`:
 
 ```bash
-pipenv run ./gpxcomment --reference wahoo.gpx --timezone Europe/Amsterdam file.gpx
+pipenv run ./gpxcomment --reference wahoo.gpx file.gpx
 ```
-
-It is **very important** to use the `--timezone` flag when using `gpxcomment`. Otherwise it will try to map the timezone for each GPX point, which significantly slows performance.
 
 #### `gpxstats`: human readable GPX
 
@@ -504,4 +530,4 @@ Please file an issue! Thank you.
 
 * https://github.com/JuanIrache/gopro-telemetry (code that runs https://goprotelemetryextractor.com/free/), a tool similar to `gopro2gpx`, but not suitable for this project because it does not work correctly for TimeWarp'd footage.
 
-* [GPX Editor](https://apps.apple.com/nl/app/gpx-editor/id924782627?mt=12), a tool to manipulate GPX files for Mac. I don't love it, but it does the job.
+* [GPX Editor](https://apps.apple.com/nl/app/gpx-editor/id924782627?mt=12), a tool to manipulate GPX files for Mac. I don't love it, but it does the job.I

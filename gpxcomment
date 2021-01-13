@@ -12,7 +12,7 @@ def main():
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)")
     parser.add_argument("-o", "--output", help="Write output to OUTPUT")
     parser.add_argument("-r", "--reference", help="The reference GPX track (e.g., from a Garmin or Wahoo)", required=True)
-    parser.add_argument("-z", "--timezone", help="Set timezone rather than infering it from location")
+    parser.add_argument("-z", "--force-timezone", help="Force per-point timezone lookup", action="store_true")
     parser.add_argument("files", nargs="*")
     args = parser.parse_args()
 
@@ -33,7 +33,7 @@ def main():
         points += xpoints
 
     try:
-        segment.points = gpxlib.gpxcomment(points, ref_points, timezone=args.timezone)
+        segment.points = gpxlib.gpxcomment(points, ref_points, force_timezone=args.force_timezone)
     except Exception as e:
         sys.exit(traceback.format_exc())
 

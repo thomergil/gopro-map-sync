@@ -36,7 +36,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file", required=True)
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)")
     parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
-    parser.add_argument("-z", "--timezone", help="Only when used with --reference: speedup by forcing timezone")
+    parser.add_argument("-z", "--force-timezone", help="Only when used with --reference: force per-point timezone lookup", action="store_true")
     args, pass_args = parser.parse_known_args()
 
     # logging
@@ -241,7 +241,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         gpx_in, ref_points = gpxlib.read(args.reference)
         try:
             logging.info("Apply gpxcomment with reference %s" % (args.reference))
-            points = gpxlib.gpxcomment(points, ref_points, args.timezone)
+            points = gpxlib.gpxcomment(points, ref_points, force_timezone=args.force_timezone)
         except Exception as e:
             sys.exit(traceback.format_exc())
 
