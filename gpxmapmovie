@@ -138,6 +138,10 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     if not len(mp4_files) and not len(gpx_files):
         sys.exit("Expected at least one .mp4 file or .gpx file")
 
+    if args.reference:
+        if not os.path.isfile(args.reference):
+            sys.exit("--reference parameter %s does not exist" % (args.reference))
+
     # sanity check: all MP4 files exist
     for f in mp4_files:
         if f and not os.path.isfile(f):
@@ -196,7 +200,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # clean up outliers in GPX tracks
     for idx, points in enumerate(gpx_file_points):
-        logging.info("Cleaning GPX file %s" % (gpx_file))
+        logging.info("Cleaning GPX file %s" % (gpx_files[idx]))
         try:
             gpx_file_points[idx] = gpxlib.gpxclean(points)
         except Exception as e:
@@ -218,7 +222,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             xargs = [arg.strip() for arg in xargs.split(',')]
             func = xargs.pop(0)
             exec_s = "gpx_file_points[%d] = gpxlib.%s(gpx_file_points[%d], %s)" % (idx, func, idx, ", ".join(xargs))
-            logging.info("Piping GPX file %s through %s" % (gpx_file, exec_s))
+            logging.info("Piping GPX file %s through %s" % (gpx_files[idx], exec_s))
             try:
                 exec(exec_s)
             except Exception as e:
