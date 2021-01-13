@@ -7,6 +7,7 @@ import traceback
 
 import gpxlib
 
+DEFAULT_LIMIT = 10
 
 def main():
     # https://stackoverflow.com/questions/10027242/python-argparse-to-handle-arbitrary-numeric-options-like-head1
@@ -21,7 +22,8 @@ def main():
     gpx_in, points = gpxlib.read(args.file)
     gpx_out, segment = gpxlib.create(gpx_in)
 
-    for idx in range(len(points) - abs(int(pass_args[0])), len(points)):
+    limit = abs(int(pass_args[0])) if len(pass_args) else DEFAULT_LIMIT
+    for idx in range(len(points) - limit, len(points)):
         segment.points.append(points[idx])
 
     s = gpx_out.to_xml()

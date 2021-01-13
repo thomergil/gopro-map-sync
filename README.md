@@ -31,14 +31,10 @@ The generated video will be at `/Users/john/Movies/movie.mp4`.
 ## Installation for Mac
 
 ```bash
-# install python and pipenv
-brew install python@3.9 pipenv
-
-# install ffmpeg
-brew install ffmpeg
+# install dependencies
+brew install python@3.9 pipenv ffmpeg cmake
 
 # install gopro2gpx [https://github.com/NetworkAndSoftware/gopro2gpx]
-brew install cmake
 git clone --recurse-submodules git@github.com:NetworkAndSoftware/gopro2gpx.git
 cd ./gopro2gpx
 cmake .
@@ -375,7 +371,7 @@ However, there is likely a timestamp gap between the end of `file1.gpx` and the 
 pipenv run ./gpxcat --killgap file1.gpx file2.gpx
 ```
 
-`gpxcat` tracks the averag gap between timestamps and uses that to fill in the gap between `file1.gpx` and `file2.gpx`.
+`gpxcat` tracks the average gap between timestamps and uses that to fill in the gap between `file1.gpx` and `file2.gpx`.
 
 This can be used combined with `--gaplength SECS` to add a number of seconds (**in addition** to the computed average) between the last point of `file1.gpx` and the first point of `file2.gpx`.
 
@@ -399,7 +395,7 @@ In its simplest form, `gpxtac` inverses all points in a file:
 pipenv run ./gpxtac file1.gpx
 ```
 
-However, this also inverts timestamps, meaning that time is going backwards. To rotate just GPS locations, but not timestamps, use `--time`:
+However, this also inverts timestamps, meaning that time will appear to go backwards. To invert just GPS locations, but not timestamps, use `--time`:
 
 ```bash
 pipenv run ./gpxtac --time file1.gpx
@@ -407,7 +403,7 @@ pipenv run ./gpxtac --time file1.gpx
 
 ### `gpxhead` and `gpxtail`
 
-Like, UNIX `head` and `tail`, both can take a numeric flag to indicate the number of lines at the start/end of the file to display:
+Like, UNIX `head` and `tail`, both take a numeric flag to indicate the number of lines at the start/end of the file to display:
 
 ```bash
 pipenv run ./gpxhead -20 file.gpx
