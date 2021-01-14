@@ -11,13 +11,13 @@ import re
 import shlex
 import traceback
 import textwrap
+import tempfile
 from ffprobe import FFProbe
 
 import gpxlib
 
 GOPRO2GPX = "gopro2gpx"
 DURATION_FIX = -40 # milliseconds from calculated total duration
-OUTFILE = "/tmp/gpxmapmovie.gpx"
 DEFAULT_LOG_LEVEL = 'info'
 
 def main():
@@ -255,55 +255,58 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     # write result to a file as GPX Animator --input argument
     gpx_out, segment = gpxlib.create(gpx_in)
     segment.points = points
-    with open(OUTFILE, 'w') as f:
+
+    tmpfile = tempfile.NamedTemporaryFile()
+    with open(tmpfile.name, 'w') as f:
         f.write(gpx_out.to_xml())
+        f.flush()
 
-    # create GPX Animator command line invocation from --args argument and all
-    # unprocessed command line arguments; command-line arguments override
-    # settings from --args
+        # create GPX Animator command line invocation from --args argument and all
+        # unprocessed command line arguments; command-line arguments override
+        # settings from --args
 
-    # read default args for GPX Animator from a file, if given
-    pass_args_h = {}
-    if args.args:
-        with open(args.args, 'r') as f:
-            for line in f.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                thunk = shlex.split(line)
-                flag = thunk.pop(0)
-                pass_args_h[flag] = None
-                if len(thunk):
-                    pass_args_h[flag] = thunk[0]
+        # read default args for GPX Animator from a file, if given
+        pass_args_h = {}
+        if args.args:
+            with open(args.args, 'r') as fx:
+                for line in fx.readlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    thunk = shlex.split(line)
+                    flag = thunk.pop(0)
+                    pass_args_h[flag] = None
+                    if len(thunk):
+                        pass_args_h[flag] = thunk[0]
 
-    # turn pass_args_into a hash
-    while len(pass_args):
-        arg = pass_args.pop(0)
-        if arg.startswith('--') and pass_args[0] and not pass_args[0].startswith('--'):
-            pass_args_h[arg] = pass_args.pop(0)
-        else:
-            pass_args_h[arg] = None
+        # turn pass_args_into a hash
+        while len(pass_args):
+            arg = pass_args.pop(0)
+            if arg.startswith('--') and pass_args[0] and not pass_args[0].startswith('--'):
+                pass_args_h[arg] = pass_args.pop(0)
+            else:
+                pass_args_h[arg] = None
 
-    cmd = ["java", "-jar", args.jar]
-    for key, value in pass_args_h.items():
-        cmd.append(key)
-        if value:
-            cmd.append(value)
+        cmd = ["java", "-jar", args.jar]
+        for key, value in pass_args_h.items():
+            cmd.append(key)
+            if value:
+                cmd.append(value)
 
-    # --input argument to GPXA
-    cmd += ['--input', OUTFILE]
+        # --input argument to GPXA
+        cmd += ['--input', f.name]
 
-    if args.divide:
-        total_duration /= float(args.divide)
+        if args.divide:
+            total_duration /= float(args.divide)
 
-    if args.total_duration:
-        total_duration = args.total_duration
+        if args.total_duration:
+            total_duration = args.total_duration
 
-    if total_duration:
-        cmd += ['--total-time', str(int(total_duration) + DURATION_FIX)]
+        if total_duration:
+            cmd += ['--total-time', str(int(total_duration) + DURATION_FIX)]
 
-    logging.info(" ".join(cmd))
-    call(cmd)
+        logging.info(" ".join(cmd))
+        call(cmd)
 
 if __name__ == '__main__':
     main()
