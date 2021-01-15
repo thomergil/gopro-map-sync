@@ -39,6 +39,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
     parser.add_argument("-i", "--input", help="Path to output", action="append")
     parser.add_argument("-z", "--force-timezone", help="Only when used with --reference: force per-point timezone lookup", action="store_true")
+    parser.add_argument("-k", "--keep", help="Don't trash generated GPX file", action="store_true")
     args, pass_args = parser.parse_known_args()
 
     # logging
@@ -256,7 +257,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     gpx_out, segment = gpxlib.create(gpx_in)
     segment.points = points
 
-    tmpfile = tempfile.NamedTemporaryFile()
+    tmpfile = tempfile.NamedTemporaryFile(delete=not args.keep)
     with open(tmpfile.name, 'w') as f:
         f.write(gpx_out.to_xml())
         f.flush()
@@ -294,7 +295,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
                 cmd.append(value)
 
         # --input argument to GPXA
-        cmd += ['--input', f.name]
+        cmd += ['--input', tmpfile.name]
 
         if args.divide:
             total_duration /= float(args.divide)
@@ -307,6 +308,9 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
         logging.info(" ".join(cmd))
         call(cmd)
+
+        if args.keep:
+            logging.info("GPX file kept at %s" % (tmpfile.name))
 
 if __name__ == '__main__':
     main()
