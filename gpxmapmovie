@@ -34,7 +34,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     parser.add_argument("-a", "--args", help="Default args for GPX Animator")
     parser.add_argument("-f", "--files", help="See FILES below")
-    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file")
+    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file; can be set with GPXMAPMOVIE_JAR")
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
     parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
     parser.add_argument("-i", "--input", help="Path to output", action="append")
