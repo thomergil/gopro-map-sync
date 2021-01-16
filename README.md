@@ -318,6 +318,10 @@ This process of "annotating" data is messy and imperfect, especially as GoPro fo
 
 Under the hood, `gpxcomment` annotates the GPX by adding a `<cmt>` block to each GPX track point, which GPX Animator consumes using the `--comment-position` argument.
 
+## Using `--files`, `--args` , `--reference` with `--path` or `GPXMAPMOVIE_PATH`
+
+All arguments for `--files`, `--args-`, and `--reference` should either be absolute paths or relative to the current directory. You can use `--path` (or set `$GPXMAPMOVIE_PATH`) with relative paths for `--files`, `--args`, and `--reference`, in which case those paths are relative to `--path` (or `$GPXMAPMOVIE_PATH`).
+
 ## Advanced usage: using `--files`, `--args` , `--reference` with Docker
 
 Docker images cannot access files on your disk unless you mount the containing folder with `--mount`. Let's say one or more movies are stored in `/Users/john/Movies/` . In addition, files to be used as `--files` and `--args ` and `--reference` are stored `/Users/john/save/`. We need to mount both of these directories as part of the `gpxmapmovie` invocation.

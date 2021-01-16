@@ -19,6 +19,8 @@ import gpxlib
 GOPRO2GPX = "gopro2gpx"
 DURATION_FIX = -40 # milliseconds from calculated total duration
 DEFAULT_LOG_LEVEL = 'info'
+ENVVAR_JAR = 'GPXMAPMOVIE_JAR'
+ENVVAR_PATH = 'GPXMAPMOVIE_PATH'
 
 def main():
     parser = argparse.ArgumentParser(description="A wrapper around GPX Animator [https://gpx-animator.app]",
@@ -33,6 +35,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     duration_group.add_argument("-t", "--total-duration", help="Force total duration of video (in milliseconds)", type=int)
 
     parser.add_argument("-a", "--args", help="Default args for GPX Animator")
+    parser.add_argument("-p", "--path", help="Make --args, --files, --reference relative to --path")
     parser.add_argument("-f", "--files", help="See FILES below")
     parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file; can be set with GPXMAPMOVIE_JAR")
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
@@ -48,12 +51,40 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         raise ValueError('Invalid log level: %s' % args.log)
     logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
 
-    jarpath = args.jar if args.jar else os.environ['GPXMAPMOVIE_JAR']
-    if not jarpath:
-        sys.exit("You must specify either --jar or set $GPXMAPMOVIE_JAR")
+    jarpath = None
+    if ENVVAR_JAR in os.environ and os.environ[ENVVAR_JAR]:
+        jarpath = os.environ[ENVVAR_JAR]
+    if args.jar:
+        jarpath = args.jar
 
+    if not jarpath:
+        sys.exit("You must specify either --jar or set $%s" % (ENVVAR_JAR))
     if not os.path.isfile(jarpath):
         sys.exit("--jar parameter %s not found" % (jarpath))
+
+    filepath = None
+    if ENVVAR_PATH in os.environ and os.environ[ENVVAR_PATH]:
+        filepath = os.environ[ENVVAR_PATH]
+    if args.path:
+        filepath = args.path
+
+    args_args = None
+    if args.args:
+        args_args = os.path.join(filepath, args.args) if filepath and not os.path.isabs(args.args) else args.args
+        if not os.path.isfile(args_args):
+            sys.exit("--args parameter %s does not exist" % (args_args))
+
+    args_reference = None
+    if args.reference:
+        args_reference = os.path.join(filepath, args.reference) if filepath and not os.path.isabs(args.reference) else args.reference
+        if not os.path.isfile(args_reference):
+            sys.exit("--reference parameter %s does not exist" % (args_reference))
+
+    args_files = None
+    if args.files:
+        args_files = os.path.join(filepath, args.files) if filepath and not os.path.isabs(args.files) else args.files
+        if not os.path.isfile(args_files):
+            sys.exit("--files parameter %s does not exist" % (args_files))
 
     #
     # Read instructions from --files argument.
@@ -86,9 +117,9 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     # ./relative/path/to/video.mp4 | gpxdup, duplicate=3, shift=0 | gpxshift, value=-10
     #
     mp4_files, gpx_files, gpx_pipes, durations, total_duration = [], [], [], [], 0
-    if args.files:
-        files_basedir, _ = os.path.split(args.files)
-        with open(args.files, 'r') as f:
+    if args_files:
+        files_basedir, _ = os.path.split(args_files)
+        with open(args_files, 'r') as f:
             lines = f.readlines()
         for line in lines:
             line = line.strip()
@@ -145,10 +176,6 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     if not len(mp4_files) and not len(gpx_files):
         sys.exit("Expected at least one .mp4 file or .gpx file")
-
-    if args.reference:
-        if not os.path.isfile(args.reference):
-            sys.exit("--reference parameter %s does not exist" % (args.reference))
 
     # sanity check: all MP4 files exist
     for f in mp4_files:
@@ -249,10 +276,10 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # optionally run gpxcomment against reference file
     gpx_in = None
-    if args.reference:
-        gpx_in, ref_points = gpxlib.read(args.reference)
+    if args_reference:
+        gpx_in, ref_points = gpxlib.read(args_reference)
         try:
-            logging.info("Apply gpxcomment with reference %s" % (args.reference))
+            logging.info("Apply gpxcomment with reference %s" % (args_reference))
             points = gpxlib.gpxcomment(points, ref_points, force_timezone=args.force_timezone)
         except Exception as e:
             sys.exit(traceback.format_exc())
@@ -272,8 +299,8 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
         # read default args for GPX Animator from a file, if given
         pass_args_h = {}
-        if args.args:
-            with open(args.args, 'r') as fx:
+        if args_args:
+            with open(args_args, 'r') as fx:
                 for line in fx.readlines():
                     line = line.strip()
                     if not line or line.startswith("#"):
