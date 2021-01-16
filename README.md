@@ -170,7 +170,12 @@ Note that **this will make the gpxcomment stage very slow** as a timezone lookup
 gpxmapmovie -j gpx-animator.jar --reference wahoo.gpx --force-timezone --output output.mp4 -i file1.mp4
 ```
 
+For convenience you can set `GPXMAPMOVIE_JAR` instead of using `--jar`:
 
+```bash
+export GPXMAPMOVIE_JAR=~/src/gpx-animator/build/libs/gpx-animator-1.6.0-SNAPSHOT-all.jar
+gpxmapmovie --output output.mp4 -i file1.mp4 [-i file2.mp4 [...]]
+```
 
 ## Passing additional arguments to GPX Animator via `gpxmapmovie`'s command line
 

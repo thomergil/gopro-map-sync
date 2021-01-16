@@ -34,7 +34,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     parser.add_argument("-a", "--args", help="Default args for GPX Animator")
     parser.add_argument("-f", "--files", help="See FILES below")
-    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file", required=True)
+    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file")
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
     parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
     parser.add_argument("-i", "--input", help="Path to output", action="append")
@@ -48,8 +48,12 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         raise ValueError('Invalid log level: %s' % args.log)
     logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
 
-    if not os.path.isfile(args.jar):
-        sys.exit("--jar parameter %s not found" % (args.jar))
+    jarpath = args.jar if args.jar else os.environ['GPXMAPMOVIE_JAR']
+    if not jarpath:
+        sys.exit("You must specify either --jar or set $GPXMAPMOVIE_JAR")
+
+    if not os.path.isfile(jarpath):
+        sys.exit("--jar parameter %s not found" % (jarpath))
 
     #
     # Read instructions from --files argument.
@@ -288,7 +292,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             else:
                 pass_args_h[arg] = None
 
-        cmd = ["java", "-jar", args.jar]
+        cmd = ["java", "-jar", jarpath]
         for key, value in pass_args_h.items():
             cmd.append(key)
             if value:
