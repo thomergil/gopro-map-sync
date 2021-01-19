@@ -526,21 +526,24 @@ This means GPX points are missing at the start of the file. Use `gpxdup, duplica
 
 This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` in the `--files` file argument to strip points from the start of the GPX file. Start with N=1 or N=2.
 
-#### After tweaking `strip` and `duplicate`, synchronization still is not perfect
+#### After tweaking `strip` and `duplicate` numbers, synchronization still is not perfect
 
-Each strip/duplicate adds 400ms. You can fine-tune, by setting `duplicate=1` and then tweaking `time`. For example:
+Each strip/duplicate adds 400ms by default. You can fine-tune this, however, by setting `duplicate=1` and then tweaking `time`. For example:
 
 ```
-2020-08-19-01.mp4 | gpxdup, duplicate=1, shift=0, time=1200
-2020-08-19-02.mp4 | gpxdup, duplicate=1, shift=0, time=700
-2020-08-19-03.mp4 | gpxdup, duplicate=1, shift=0, time=200
+2020-08-19-01.mp4 | gpxdup, duplicate=1, shift=0, time=1200 # ✅
+2020-08-19-02.mp4 | gpxdup, duplicate=1, shift=0, time=700 # ✅
+2020-08-19-03.mp4 | gpxdup, duplicate=1, shift=0, strip=1, time=150 # ✅
+2020-08-19-04.mp4 | gpxdup, duplicate=2, shift=0 # work in progress
 ```
+
+(As a sidetone, while I'm working on synchronizing footage, I like to keep track of which ones are correct with a ✅. Anything after the last `#` character is ignored.)
 
 If the GoPro footage is **ahead**, then **increase** the `time` value.
 
 If the GoPro footage lags **behind**, then **decrease** the `time` value.
 
-Obviously, if `time` is less than 0, you'll need to use `strip` as well. Recall that `strip` is applied before `duplicate` is applied. In other words `strip=2`, `duplicate=1` means that the first 2 points from the GPX track are removed, and the third point (which becomes the first point) is duplicated.
+Obviously, if `time` is less than 0, you'll need to use `strip` as well. Recall that `strip` is applied before `duplicate`. In other words `strip=2`, `duplicate=1` means that the first 2 points from the GPX track are removed, and the third point (which becomes the first point) is duplicated.
 
 #### **There is a crazy outlier point that screws everything up**
 
