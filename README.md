@@ -526,6 +526,21 @@ This means GPX points are missing at the start of the file. Use `gpxdup, duplica
 
 This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` in the `--files` file argument to strip points from the start of the GPX file. Start with N=1 or N=2.
 
+#### After tweaking `strip` and `duplicate`, synchronization still is not perfect
+
+Each strip/duplicate adds 400ms. You can fine-tune, by setting `duplicate=1` and then tweaking `time`. For example:
+
+```
+2020-08-19-01.mp4 | gpxdup, duplicate=1, shift=0, time=1200
+2020-08-19-02.mp4 | gpxdup, duplicate=1, shift=0, time=700
+2020-08-19-03.mp4 | gpxdup, duplicate=1, shift=0, time=200
+```
+
+If the GoPro footage is **ahead**, then **increase** the `time` value.
+If the GoPro footage lags **behind**, then **decrease** the `time` value.
+
+Obviously, if `time` is less than 0, you'll need to use `strip` as well. Recall that `strip` is applied before `duplicate` is applied. In other words `strip=2`, `duplicate=1` means that the first 2 points from the GPX track are removed, and the third point (which becomes the first point) is duplicated.
+
 #### **There is a crazy outlier point that screws everything up**
 
 Run the GPX file through `gpxclean`. Usually it's a single outlier point, but sometimes it's more, in which case you need to set `--tolerance` to a higher number.
