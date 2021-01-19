@@ -122,7 +122,11 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         with open(args_files, 'r') as f:
             lines = f.readlines()
         for line in lines:
+            # remove trailing comments
+            line = re.sub(r'\s*#[^#]*$', '', line)
             line = line.strip()
+
+            # skip empty or commented lines
             if not line or line.startswith('#'):
                 continue
             words = shlex.split(line)
