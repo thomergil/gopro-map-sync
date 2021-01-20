@@ -508,25 +508,25 @@ Visual tools are better suited for this, however.
 
 There are common problems that cause GoPro footage and map video to be out of sync. Here is a list of common problems and solutions.
 
-#### The footage is immediately out of sync
+### The footage is immediately out of sync
 
 The GoPro takes a while to obtain a GPS lock. Until it does, it either does not record any GPX points or it records wildly inaccurate GPX points. Use a visual GPX editor or `gpxdup` and/or `gpxshift` to remove those points and/or (re)insert them. When editing, make sure timestamps remain smooth relative to the rest of the file.
 
 The first time you turn on a GoPro to record footage, it is advisable to turn it on, let it obtain GPS lock for a few minutes. Record a 60-second video. Turn it off. It is now ready for use.
 
-#### **The footage gets out of sync**
+### **The footage gets out of sync**
 
 This happens on boundaries between MP4 files. My GoPro HERO 8 Black consistently drops 2 GPX points at the start of each movie. In the `--files` examples above you can see frequent examples of `| gpxdup, duplicate=2` to duplicate the first GPX point twice (for a total of 3 points) to smooth out this problem.
 
-#### The map movie gets ahead of the GoPro footage
+### The map movie gets ahead of the GoPro footage
 
 This means GPX points are missing at the start of the file. Use `gpxdup, duplicate=N` in the `--files` file argument to duplicate points at the start of the GPX file. Start with N=1 or N=2.
 
-#### **The map movie lags behind the GoPro footage**
+### **The map movie lags behind the GoPro footage**
 
 This means there are too many GPX points at the start of the file. Use `gpxdup, strip=N` in the `--files` file argument to strip points from the start of the GPX file. Start with N=1 or N=2.
 
-#### After tweaking `strip` and `duplicate` numbers, synchronization still is not perfect
+### After tweaking `strip` and `duplicate` numbers, synchronization still is not perfect
 
 Each strip/duplicate adds 400ms by default. You can fine-tune this, however, by setting `duplicate=1` and then tweaking `time`. For example:
 
@@ -545,15 +545,15 @@ If the GoPro footage lags **behind**, then **decrease** the `time` value.
 
 Obviously, if `time` is less than 0, you'll need to use `strip` as well. Recall that `strip` is applied before `duplicate`. In other words `strip=2`, `duplicate=1` means that the first 2 points from the GPX track are removed, and the third point (which becomes the first point) is duplicated.
 
-#### **There is a crazy outlier point that screws everything up**
+### **There is a crazy outlier point that screws everything up**
 
 Run the GPX file through `gpxclean`. Usually it's a single outlier point, but sometimes it's more, in which case you need to set `--tolerance` to a higher number.
 
-#### It crashes
+### It crashes
 
 Please file an issue! Thank you.
 
-### Other projects
+## Other projects
 
 * [GPX Animator](https://gpx-animator.app/), an excellent tool originally written by [Martin Ždila](https://github.com/zdila), currently maintained by [Marcus Fihlon](https://github.com/McPringle).
 
