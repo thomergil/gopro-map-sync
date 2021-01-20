@@ -539,9 +539,9 @@ Each strip/duplicate adds 400ms by default. You can fine-tune this, however, by 
 
 (As a sidetone, while I'm working on synchronizing footage, I like to keep track of which ones are correct with a ✅. Anything after the last `#` character is ignored.)
 
-If the GoPro footage is **ahead**, then **increase** the `time` value.
+If the GoPro footage is **ahead**, then **increase** the `time` value. 
 
-If the GoPro footage lags **behind**, then **decrease** the `time` value.
+If the GoPro footage lags **behind**, then **decrease** the `time` value. (If at `duplicate=1, time=0` the movie still lags, then increase `strip`.)
 
 Obviously, if `time` is less than 0, you'll need to use `strip` as well. Recall that `strip` is applied before `duplicate`. In other words `strip=2`, `duplicate=1` means that the first 2 points from the GPX track are removed, and the third point (which becomes the first point) is duplicated.
 
