@@ -559,6 +559,8 @@ Please file an issue! Thank you.
 
 * https://github.com/JoanMartin/trackanimation, a similar tool as GPX Animator.
 
+* https://github.com/progweb/gpx2video, similar to gopro-map-sync.
+
 * Compare GPX tracks using the Needleman-Wunsch algorithm ([explained](https://steemit.com/programming/@bitcalm/how-to-compare-gps-tracks)): https://github.com/jonblack/cmpgpx.
 
 * https://github.com/remisalmon/gpx_interpolate, a tool that interpolates GPX points in a sparse GPX track.
