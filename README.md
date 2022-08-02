@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a set of tools to generate a moving map video that synchronizes **exactly** with GoPro footage. Heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but `gopro-map-sync` uses other tools such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx) and ffmpeg.
+This is a set of tools to generate a moving map video that synchronizes **exactly** with GoPro footage. The heavy lifting is performed by [GPX Animator](https://gpx-animator.app/), but `gopro-map-sync` uses other tools such as [gopro2gpx](https://github.com/NetworkAndSoftware/gopro2gpx) and ffmpeg.
 
 ![screenshot](assets/screenshot.png)
 
@@ -134,7 +134,7 @@ The output of this won't be great. The rest of this manual tries to make it bett
 
 When looking at the `gpxmapmovie` command line it is important to understand that **almost all parameters are passed to GPX Animator**. The only ones that `gpxmapmovie` consumes are: `-j/--jar`, `-f,--files`, `-a,--args`, `-l/--log`, `-r/--reference`, `-i/--input`, and `-z/--force-timezone`. All other command line parameters are passed on to the GPX Animator command line.
 
-The simplest command line requires only `-j` and `--output`and, of course, one ore more input files (with `-i` or `--input`), which can be either .mp4 files or .gpx files. (Note that `-o` is **not** a valid command line parameter, because it is passed on to GPX Animator, which does not accept  `-o`.) Here is an example with .mp4 files.
+The simplest command line requires only `-j` and `--output`and, of course, one or more input files (with `-i` or `--input`), which can be either .mp4 files or .gpx files. (Note that `-o` is **not** a valid command line parameter, because it is passed on to GPX Animator, which does not accept  `-o`.) Here is an example with .mp4 files.
 
 
 ```bash
