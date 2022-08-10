@@ -1,0 +1,3 @@
+[submodule "docker/gopro2gpx"]
+	path = docker/gopro2gpx
+	url = https://github.com/NetworkAndSoftware/gopro2gpx

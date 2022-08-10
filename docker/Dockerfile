@@ -1,4 +1,5 @@
-FROM adoptopenjdk/openjdk15:debian
+# FROM adoptopenjdk/openjdk15:debian
+FROM eclipse-temurin:17
 
 RUN apt-get update
 RUN apt-get install -y vim python3 git cmake build-essential pipenv ffmpeg
@@ -13,8 +14,8 @@ RUN make
 RUN cp gopro2gpx /usr/local/bin/
 
 WORKDIR /src/
-RUN curl -L https://github.com/zdila/gpx-animator/archive/v1.6.tar.gz | tar xfz -
-WORKDIR /src/gpx-animator-1.6
+RUN curl -L https://github.com/zdila/gpx-animator/archive/v1.7.tar.gz | tar xfz -
+WORKDIR /src/gpx-animator-1.7
 RUN ./gradlew assemble
 
 RUN mkdir /src/gopro-map-sync
@@ -26,4 +27,4 @@ COPY gpxlib.py .
 COPY gpxmapmovie .
 
 # ENTRYPOINT ["/bin/bash"]
-ENTRYPOINT ["/usr/bin/pipenv", "run", "/src/gopro-map-sync/gpxmapmovie", "-j", "/src/gpx-animator-1.6/build/libs/gpx-animator-1.6.0-all.jar"]
+ENTRYPOINT ["/usr/bin/pipenv", "run", "/src/gopro-map-sync/gpxmapmovie", "-j", "/src/gpx-animator-1.7/build/libs/gpx-animator-1.7.0-all.jar"]
