@@ -1,5 +1,4 @@
-# FROM adoptopenjdk/openjdk15:debian
-FROM eclipse-temurin:17
+FROM adoptopenjdk/openjdk16:debian
 
 RUN apt-get update
 RUN apt-get install -y vim python3 git cmake build-essential pipenv ffmpeg
