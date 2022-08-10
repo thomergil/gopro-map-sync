@@ -8,6 +8,7 @@ RUN mkdir /src
 WORKDIR /src
 
 COPY docker/gopro2gpx /src/gopro2gpx
+COPY docker/gpmf-parser /src/gopro2gpx/gpmf-parser
 WORKDIR /src/gopro2gpx
 RUN cmake .
 RUN make
