@@ -18,6 +18,8 @@ For that purpose, `gopro-map-sync` provides a number of additional tools to insp
 
 ## Zero installation with Docker
 
+**This does not currently work on Docker on Apple M1/M2 chips. This is being worked on.**
+
 Assuming you have a GoPro video `bikeride.mp4`  in `/Users/john/Movies/`, run:
 
 ```bash

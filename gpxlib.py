@@ -145,7 +145,7 @@ DEFAULT_TOLERANCE = 1
 # Input: GPX points
 # Returns: GPX points with outlier removes
 #
-# Specifically, gpxclean removes a maximumof of {tolerance} points that are
+# Specifically, gpxclean removes a maximum of of {tolerance} points that are
 # {maxdist} meters or more away from its previous point.
 #
 # Notice that gpxclean will not do the right thing if the first point is the
