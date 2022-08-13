@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk16:debian
+FROM adoptopenjdk/openjdk16:latest
 
 RUN apt-get update
 RUN apt-get install -y vim python3 git cmake build-essential pipenv ffmpeg
