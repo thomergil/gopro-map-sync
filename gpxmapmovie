@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from subprocess import run, Popen, call, PIPE
+from subprocess import run, Popen, call, PIPE, check_output
 import sys
 import argparse
 import getpass
@@ -12,7 +12,7 @@ import shlex
 import traceback
 import textwrap
 import tempfile
-from ffprobe import FFProbe
+# from ffprobe import FFProbe
 
 import gpxlib
 
@@ -188,6 +188,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # extract .gpx from .mp4
     for idx, mp4_file in enumerate(mp4_files):
+        logging.info("Extract GPX from %s" % (mp4_file))
         if not mp4_file:
             continue
 
@@ -211,15 +212,21 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             fname = words[-1]
             gpx_files[idx] = fname
 
-        # establish duration of mp4 file using ffprobe, we're looking for.
-        mp4_data = FFProbe(mp4_file)
-        duration_s = mp4_data.__dict__['metadata']['Duration']
+        # establish duration of mp4 file using ffprobe
+        # XXX FFProbe sometimes fails; do it with command line below
+        # mp4_data = FFProbe(mp4_file)
 
+        # https://stackoverflow.com/questions/30977472/python-getting-duration-of-a-video-with-ffprobe
+        duration_s = check_output(['ffprobe', '-i', mp4_file, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=%s' % ("p=0")]).decode("utf-8").strip()
+        # duration_s = mp4_data.__dict__['metadata']['Duration']
         # convert to duration by pretending it's a time since 00:00:00.00
-        zero = datetime.datetime.strptime('00:00:00.00', '%H:%M:%S.%f')
-        duration = datetime.datetime.strptime(duration_s, '%H:%M:%S.%f') - zero
+        # zero = datetime.datetime.strptime('00:00:00.00', '%H:%M:%S.%f')
+        # duration = datetime.datetime.strptime(duration_s, '%H:%M:%S.%f') - zero
+
+        duration = float(duration_s)
+
         durations.append(duration)
-        total_duration += duration.seconds * 1000 + duration.microseconds / 1000
+        total_duration += duration * 1000
 
     # sanity check: all GPX files exist
     for f in gpx_files:

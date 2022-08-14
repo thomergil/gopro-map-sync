@@ -8,7 +8,7 @@ gpxpy = "*"
 geopy = "*"
 timezonefinder = "*"
 python-dateutil = "*"
-ffprobe-python = "*"
+# ffprobe-python = "*"
 dateparser = "*"
 
 [dev-packages]

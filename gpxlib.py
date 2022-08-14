@@ -134,7 +134,7 @@ def gpxdup(points, strip=DEFAULT_STRIP, duplicate=DEFAULT_DUPLICATE, time=DEFAUL
 
 # --------------------------------------------------------------------------------
 #
-# gpxdup
+# gpxclean
 #
 # --------------------------------------------------------------------------------
 DEFAULT_MAXDIST = 500 # meters
