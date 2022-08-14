@@ -6,6 +6,7 @@ import geopy.distance
 import logging
 import copy
 import dateparser
+import math
 from timezonefinder import TimezoneFinder
 from datetime import datetime, timedelta
 from dateutil import tz
@@ -165,6 +166,49 @@ def gpxclean(points, maxdist=DEFAULT_MAXDIST, tolerance=DEFAULT_TOLERANCE):
                 continue
 
             nkilled = 0
+
+        xpoints.append(point)
+        last_good_point = point
+
+    return xpoints
+
+# --------------------------------------------------------------------------------
+#
+# gpxfill
+#
+# --------------------------------------------------------------------------------
+#
+# Interpolates points between large distances
+# Input: GPX points
+# Returns: GPX points with jumps interpolated
+#
+#
+def gpxfill(points, maxdist=DEFAULT_MAXDIST):
+    xpoints = []
+    dist_sum, count, last_good_point, nkilled = 0, 0, None, 0
+    for idx, point in enumerate(points):
+        if idx:
+            xdist = dist(last_good_point, points[idx])
+            if xdist > (maxdist / 1000):
+                # diff between far-away points
+                lat_diff = points[idx].latitude - last_good_point.latitude
+                lng_diff = points[idx].longitude - last_good_point.longitude
+                time_diff = (points[idx].time - last_good_point.time).total_seconds()
+
+                # determine how many points we need to fill up the gap
+                avg_dist = dist_sum / count
+                npoints = math.floor(xdist / avg_dist)
+
+                # fill in the missing points
+                for fill_idx in range(npoints):
+                    dup_point = copy.deepcopy(last_good_point)
+                    dup_point.latitude = last_good_point.latitude + ((fill_idx+1) * (lat_diff/npoints))
+                    dup_point.longitude = last_good_point.longitude + ((fill_idx+1) * (lng_diff/npoints))
+                    dup_point.time = last_good_point.time + timedelta(0, ((fill_idx+1) * (time_diff/npoints)))
+                    xpoints.append(dup_point)
+
+            dist_sum += xdist
+            count += 1
 
         xpoints.append(point)
         last_good_point = point
