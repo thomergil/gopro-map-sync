@@ -440,6 +440,22 @@ pipenv run ./gpxclean --distance 400 file.gpx
 
 Any single point 400+ meters removed from the previous point is removed.
 
+### `gpxfill`: interpolate gaps
+
+Similar to `gxpclean`, but fills in gaps greater than the distance specified by `--distance METERS`.
+
+```bash
+pipenv run ./gpxfill file.gpx
+```
+
+You can change the default distance that is considered an outlier, using `--distance METERS`.
+
+```bash
+pipenv run ./gpxclean --distance 400 file.gpx
+```
+
+In this case, Any gap greater than 400 meters is "filled in", by averaging latitude, longitude, and time over the missing distance.
+
 ### `gpxdup`: duplicate the first GPX point
 
 Duplicates the first point in a GPX file. It can shift duplicated points laterally (with `--shift`, in units of 1/100000 latitude) and in time (with `--time`).
