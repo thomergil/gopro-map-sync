@@ -11,6 +11,7 @@ import gpxlib
 def main():
     parser = argparse.ArgumentParser(description="Interpolate outlier points")
     parser.add_argument("-d", "--distance", help="Distance where a point is considered an outlier", type=int, default=gpxlib.DEFAULT_MAXDIST)
+    parser.add_argument("-f", "--filldist", help="Distance between fake points", type=int, default=gpxlib.DEFAULT_FILLDIST)
     parser.add_argument('file', nargs='?')
     args, pass_args = parser.parse_known_args()
 
@@ -20,7 +21,7 @@ def main():
     gpx_out, segment = gpxlib.create(gpx_in)
 
     try:
-        segment.points = gpxlib.gpxfill(points, maxdist=args.distance)
+        segment.points = gpxlib.gpxfill(points, maxdist=args.distance, filldist=args.filldist)
     except Exception as e:
         sys.exit(traceback.format_exc())
 

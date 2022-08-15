@@ -183,7 +183,8 @@ def gpxclean(points, maxdist=DEFAULT_MAXDIST, tolerance=DEFAULT_TOLERANCE):
 # Returns: GPX points with jumps interpolated
 #
 #
-def gpxfill(points, maxdist=DEFAULT_MAXDIST):
+DEFAULT_FILLDIST = 25 # meters
+def gpxfill(points, maxdist=DEFAULT_MAXDIST, filldist=None):
     xpoints = []
     dist_sum, count, last_good_point, nkilled = 0, 0, None, 0
     for idx, point in enumerate(points):
@@ -195,17 +196,27 @@ def gpxfill(points, maxdist=DEFAULT_MAXDIST):
                 lng_diff = points[idx].longitude - last_good_point.longitude
                 time_diff = (points[idx].time - last_good_point.time).total_seconds()
 
-                # determine how many points we need to fill up the gap
-                avg_dist = dist_sum / count
+                # we're either filling the gap with points {filldist} meters
+                # spaced apart, or we do it based on the average we've seen so
+                # far
+                avg_dist = None
+                if filldist:
+                    avg_dist = filldist / 1000
+
+                elif count:
+                    # determine how many points we need to fill up the gap
+                    avg_dist = dist_sum / count
+
                 npoints = math.floor(xdist / avg_dist)
 
                 # fill in the missing points
-                for fill_idx in range(npoints):
-                    dup_point = copy.deepcopy(last_good_point)
-                    dup_point.latitude = last_good_point.latitude + ((fill_idx+1) * (lat_diff/npoints))
-                    dup_point.longitude = last_good_point.longitude + ((fill_idx+1) * (lng_diff/npoints))
-                    dup_point.time = last_good_point.time + timedelta(0, ((fill_idx+1) * (time_diff/npoints)))
-                    xpoints.append(dup_point)
+                if avg_dist:
+                    for fill_idx in range(npoints):
+                        dup_point = copy.deepcopy(last_good_point)
+                        dup_point.latitude = last_good_point.latitude + ((fill_idx+1) * (lat_diff/npoints))
+                        dup_point.longitude = last_good_point.longitude + ((fill_idx+1) * (lng_diff/npoints))
+                        dup_point.time = last_good_point.time + timedelta(0, ((fill_idx+1) * (time_diff/npoints)))
+                        xpoints.append(dup_point)
 
             dist_sum += xdist
             count += 1
@@ -534,7 +545,7 @@ def gpxcomment(points, ref_points, force_timezone=False):
     pauses = find_pauses(ref_points)
     logging.debug("Pauses = " + str(pauses))
 
-    # as we travers points and we mattch to a pause, pause_idx is the index in
+    # as we traverse points and we match to a pause, pause_idx is the index in
     # pauses[] currently in, note that ref_points[pauses[pause_idx]] is the
     # start of the pause
     pause_idx = None
