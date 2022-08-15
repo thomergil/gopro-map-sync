@@ -188,7 +188,6 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # extract .gpx from .mp4
     for idx, mp4_file in enumerate(mp4_files):
-        logging.info("Extract GPX from %s" % (mp4_file))
         if not mp4_file:
             continue
 
@@ -202,6 +201,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         #   Output file: foo.gpx
         #
         if not gpx_file:
+            logging.info("Extract GPX from %s" % (mp4_file))
             thunk = run([GOPRO2GPX, '-s', mp4_file], capture_output=True, text=True)
             if thunk.returncode:
                 sys.exit("%s failed:\n%s" % (GOPRO2GPX, thunk.stderr))
@@ -211,6 +211,8 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             words = lines[-1].split()
             fname = words[-1]
             gpx_files[idx] = fname
+        else:
+            logging.info("Use override GPX file %s" % (gpx_files[idx]))
 
         # establish duration of mp4 file using ffprobe
         # XXX FFProbe sometimes fails; do it with command line below
