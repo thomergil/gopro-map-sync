@@ -11,7 +11,7 @@ import gpxlib
 DEFAULT_LOG_LEVEL = 'info'
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool to fix timestamps in a GPX file based on a reference GPX track")
+    parser = argparse.ArgumentParser(description="A tool to annotate a GPX file with comments based on a reference GPX track")
     parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
     parser.add_argument("-o", "--output", help="Write output to OUTPUT")
     parser.add_argument("-r", "--reference", help="The reference GPX track (e.g., from a Garmin or Wahoo)", required=True)
