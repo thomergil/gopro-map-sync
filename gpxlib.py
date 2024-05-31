@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 
-import sys
-import gpxpy
-import geopy.distance
-import logging
 import copy
-import dateparser
+import logging
 import math
-from timezonefinder import TimezoneFinder
+import sys
 from datetime import datetime, timedelta
+
+import dateparser
+import geopy.distance
+import gpxpy
 from dateutil import tz
+from timezonefinder import TimezoneFinder
 
 
 def create(gpx=None):
-    """ Creates a new GPX track
+    """Creates a new GPX track
 
     Parameters:
         gpx (gpxpy.gpx.GPX): optional gpxpy.gpx.GPX object or None
@@ -36,12 +37,13 @@ def create(gpx=None):
 
     return gpx_out, gpx_segment
 
+
 #
 # Reads a file from a file or stdin.
 # Returns: (GPX object, points) tuple
 #
 def read(fname=None):
-    """ Reads GPX data from a file or stdin
+    """Reads GPX data from a file or stdin
 
     Parameters:
         fname (string): file name or None
@@ -50,15 +52,16 @@ def read(fname=None):
         [gpxpy.gpx.GPX, points] tuple
     """
     if fname:
-        with open(fname, 'r') as f:
+        with open(fname, "r") as f:
             gpx = gpxpy.parse(f)
     else:
         gpx = gpxpy.parse(sys.stdin)
 
     return gpx, all_points(gpx)
 
+
 def all_points(gpx):
-    """ Returns all GPX points
+    """Returns all GPX points
 
     Parameters:
         gpx
@@ -70,9 +73,15 @@ def all_points(gpx):
                 points.append(point)
     return points
 
+
 # returns distance between two points
 def dist(p1, p2):
-    return abs(geopy.distance.distance((p1.latitude, p1.longitude), (p2.latitude, p2.longitude)).km)
+    return abs(
+        geopy.distance.distance(
+            (p1.latitude, p1.longitude), (p2.latitude, p2.longitude)
+        ).km
+    )
+
 
 # returns time difference between two points
 def diff(p1, p2):
@@ -87,18 +96,27 @@ def diff(p1, p2):
 DEFAULT_DUPLICATE = 1
 DEFAULT_INDEX = 0
 DEFAULT_SHIFT = 35
-DEFAULT_TIME = 400 # milliseconds
+DEFAULT_TIME = 400  # milliseconds
 DEFAULT_STRIP = 0
-DEFAULT_SMART_STRIP_RADIUS = 250 # meters
+DEFAULT_SMART_STRIP_RADIUS = 250  # meters
 DEFAULT_SMART_STRIP_LIMIT = 100
+
 
 #
 # Duplicates the first {duplicate} GPX points in points.
 # Returns: an array of GPX points
 #
-def gpxdup(points, strip=DEFAULT_STRIP, duplicate=DEFAULT_DUPLICATE, time=DEFAULT_TIME, shift=DEFAULT_SHIFT,
-           smart_strip=None, smart_strip_radius=DEFAULT_SMART_STRIP_RADIUS, smart_strip_limit=DEFAULT_SMART_STRIP_LIMIT, smart_duplicate=False):
-
+def gpxdup(
+    points,
+    strip=DEFAULT_STRIP,
+    duplicate=DEFAULT_DUPLICATE,
+    time=DEFAULT_TIME,
+    shift=DEFAULT_SHIFT,
+    smart_strip=None,
+    smart_strip_radius=DEFAULT_SMART_STRIP_RADIUS,
+    smart_strip_limit=DEFAULT_SMART_STRIP_LIMIT,
+    smart_duplicate=False,
+):
     xpoints = []
     smart_strip_count = 0
     if smart_strip:
@@ -110,10 +128,16 @@ def gpxdup(points, strip=DEFAULT_STRIP, duplicate=DEFAULT_DUPLICATE, time=DEFAUL
             smart_strip_count += 1
 
             if smart_strip_count >= smart_strip_limit:
-                raise Exception("Error: unable to find point within %fkm of reference starting point within %d tries" % (strip, smart_strip_limit))
+                raise Exception(
+                    "Error: unable to find point within %fkm of reference starting point within %d tries"
+                    % (strip, smart_strip_limit)
+                )
 
             if not points:
-                raise Exception("Error: unable to find point within %fkm before emptying the whole track" % (strip))
+                raise Exception(
+                    "Error: unable to find point within %fkm before emptying the whole track"
+                    % (strip)
+                )
 
     # pop first N points out of the list
     for _ in range(strip):
@@ -123,23 +147,25 @@ def gpxdup(points, strip=DEFAULT_STRIP, duplicate=DEFAULT_DUPLICATE, time=DEFAUL
 
     # duplicate the first point N times, line them up left to right ending up
     # in the original first point
-    for idx in range(ndups+1):
+    for idx in range(ndups + 1):
         p = copy.deepcopy(points[0])
-        p.time -= ((ndups - idx) * timedelta(microseconds=time * 1000))
-        p.longitude -= ((ndups - idx) * (shift / 100000))
+        p.time -= (ndups - idx) * timedelta(microseconds=time * 1000)
+        p.longitude -= (ndups - idx) * (shift / 100000)
         xpoints.append(p)
 
     # copy the rest of the track to the output
     xpoints += points[1:]
     return xpoints
 
+
 # --------------------------------------------------------------------------------
 #
 # gpxclean
 #
 # --------------------------------------------------------------------------------
-DEFAULT_MAXDIST = 500 # meters
+DEFAULT_MAXDIST = 500  # meters
 DEFAULT_TOLERANCE = 1
+
 
 #
 # Removes points that are clearly erroneous.
@@ -172,6 +198,7 @@ def gpxclean(points, maxdist=DEFAULT_MAXDIST, tolerance=DEFAULT_TOLERANCE):
 
     return xpoints
 
+
 # --------------------------------------------------------------------------------
 #
 # gpxfill
@@ -183,10 +210,12 @@ def gpxclean(points, maxdist=DEFAULT_MAXDIST, tolerance=DEFAULT_TOLERANCE):
 # Returns: GPX points with jumps interpolated
 #
 #
-DEFAULT_FILLDIST = 25 # meters
+DEFAULT_FILLDIST = 25  # meters
+
+
 def gpxfill(points, maxdist=DEFAULT_MAXDIST, filldist=None):
     xpoints = []
-    dist_sum, count, last_good_point, nkilled = 0, 0, None, 0
+    dist_sum, count, last_good_point = 0, 0, None
     for idx, point in enumerate(points):
         if idx:
             xdist = dist(last_good_point, points[idx])
@@ -213,9 +242,15 @@ def gpxfill(points, maxdist=DEFAULT_MAXDIST, filldist=None):
                 if avg_dist:
                     for fill_idx in range(npoints):
                         dup_point = copy.deepcopy(last_good_point)
-                        dup_point.latitude = last_good_point.latitude + ((fill_idx+1) * (lat_diff/npoints))
-                        dup_point.longitude = last_good_point.longitude + ((fill_idx+1) * (lng_diff/npoints))
-                        dup_point.time = last_good_point.time + timedelta(0, ((fill_idx+1) * (time_diff/npoints)))
+                        dup_point.latitude = last_good_point.latitude + (
+                            (fill_idx + 1) * (lat_diff / npoints)
+                        )
+                        dup_point.longitude = last_good_point.longitude + (
+                            (fill_idx + 1) * (lng_diff / npoints)
+                        )
+                        dup_point.time = last_good_point.time + timedelta(
+                            0, ((fill_idx + 1) * (time_diff / npoints))
+                        )
                         xpoints.append(dup_point)
 
             dist_sum += xdist
@@ -226,22 +261,27 @@ def gpxfill(points, maxdist=DEFAULT_MAXDIST, filldist=None):
 
     return xpoints
 
+
 # --------------------------------------------------------------------------------
 #
 # gpxcat
 #
 # --------------------------------------------------------------------------------
-DEFAULT_CAT_STRETCH=1
-DEFAULT_CAT_KILLGAP=False
-DEFAULT_CAT_GAPLENGTH=0
-def gpxcat(points_list, stretch=DEFAULT_CAT_STRETCH, killgap=DEFAULT_CAT_KILLGAP, gaplength=DEFAULT_CAT_GAPLENGTH):
-    """ Intelligently flattens an array of an array (consisting of GPX points)
+DEFAULT_CAT_STRETCH = 1
+DEFAULT_CAT_KILLGAP = False
+DEFAULT_CAT_GAPLENGTH = 0
 
-    """
+
+def gpxcat(
+    points_list,
+    stretch=DEFAULT_CAT_STRETCH,
+    killgap=DEFAULT_CAT_KILLGAP,
+    gaplength=DEFAULT_CAT_GAPLENGTH,
+):
+    """Intelligently flattens an array of an array (consisting of GPX points)"""
     xpoints, prev_point, average_gap = [], None, None
     for idx, points in enumerate(points_list):
         for point_idx, point in enumerate(points):
-
             # - track_start: the first time stamp in a GPX file
             # - virtual_track_start: track_start, but time-expanded as
             #   per the rules set by stretch, killgap, and
@@ -253,7 +293,11 @@ def gpxcat(points_list, stretch=DEFAULT_CAT_STRETCH, killgap=DEFAULT_CAT_KILLGAP
                 # the virtual_track_start is the last timestamp of the previous file plus
                 # the average inter-point gap (plus, optionally, an extra gaplength).
                 if idx >= 1 and killgap:
-                    virtual_track_start = prev_point.time + timedelta(0, average_gap) + timedelta(0, gaplength)
+                    virtual_track_start = (
+                        prev_point.time
+                        + timedelta(0, average_gap)
+                        + timedelta(0, gaplength)
+                    )
 
                 if prev_point:
                     logging.debug("prev_point.time = %s" % (str(prev_point.time)))
@@ -265,7 +309,9 @@ def gpxcat(points_list, stretch=DEFAULT_CAT_STRETCH, killgap=DEFAULT_CAT_KILLGAP
                 aggr_track_gaps = 0.0
 
             # time stretching causes every time unit to be multiplied by stretch
-            point.time = virtual_track_start + timedelta(0, (point.time - track_start).total_seconds() * stretch)
+            point.time = virtual_track_start + timedelta(
+                0, (point.time - track_start).total_seconds() * stretch
+            )
 
             # track total amount of gaps between points for the purpose
             # of computing the average gap size
@@ -274,7 +320,10 @@ def gpxcat(points_list, stretch=DEFAULT_CAT_STRETCH, killgap=DEFAULT_CAT_KILLGAP
 
                 # uuh, time is going backwards!
                 if time_diff < 0:
-                    logging.debug("WARNING: time %s went backwards by %s" % (str(point.time), str(time_diff)))
+                    logging.debug(
+                        "WARNING: time %s went backwards by %s"
+                        % (str(point.time), str(time_diff))
+                    )
 
                     # fix it by just taking the previous point and adding the average gap
                     point.time = prev_point.time + timedelta(0, average_gap)
@@ -303,9 +352,8 @@ def gpxcat(points_list, stretch=DEFAULT_CAT_STRETCH, killgap=DEFAULT_CAT_KILLGAP
 #
 # --------------------------------------------------------------------------------
 def gpxshift(points, value=None, last=False):
-
     # relative shift
-    if value.startswith('+') or value.startswith('-'):
+    if value.startswith("+") or value.startswith("-"):
         shift = datetime.timedelta(microseconds=int(value) * 1000)
 
     # absolute shift
@@ -322,6 +370,7 @@ def gpxshift(points, value=None, last=False):
 
     return xpoints
 
+
 # --------------------------------------------------------------------------------
 #
 # gpxtac
@@ -336,16 +385,18 @@ def gpxtac(points, time=False):
             xpoints[-1].time = points[idx].time
     return xpoints
 
+
 # --------------------------------------------------------------------------------
 #
 # gpxcomment and utilities
 #
 # --------------------------------------------------------------------------------
-PAUSE_THRESHOLD = 20 # seconds
-PAUSE_SNAP = 100 # meters
+PAUSE_THRESHOLD = 20  # seconds
+DEFAULT_PAUSE_SNAP = 100  # meters
 
-def find_pauses(ref_points):
-    """ Returns an array with the start indices of pauses.
+
+def find_pauses(ref_points, pause_snap=DEFAULT_PAUSE_SNAP):
+    """Returns an array with the start indices of pauses.
 
     Parameters:
         ref_points (gpxpy.gpx.GPXTrackPoint[]):
@@ -360,44 +411,50 @@ def find_pauses(ref_points):
     for idx, point in enumerate(ref_points):
         xdiff = diff(prev_point, point)
         if xdiff > PAUSE_THRESHOLD:
-            logging.debug("There is a %f second pause at ref[%d] between %s and %s" % (xdiff, idx-1, str(prev_point.time), str(point.time)))
-            pauses.append(idx-1)
+            logging.debug(
+                "There is a %f second pause at ref[%d] between %s and %s"
+                % (xdiff, idx - 1, str(prev_point.time), str(point.time))
+            )
+            pauses.append(idx - 1)
         prev_point = point
     return pauses
 
-def snap_to_pause(pauses, ref_points, idx):
+
+def snap_to_pause(pauses, ref_points, idx, pause_snap=DEFAULT_PAUSE_SNAP):
     """
     Returns the index of a pause start if the given point is close enough.
 
     Parameters:
-        pauses (int[]): an array of indices into ref_points[], pointing at the last point before a pause, as created by find_pauses()
+        pauses (int[]): an array of indices into ref_points[], pointing at the last point before a pause,
+                        as created by find_pauses()
         ref_points (gpxpy.gpx.GPXTrackPoint[]): an array of GPX points
         idx (int): an index in ref_points[]
 
     Returns:
         If any entry p in pause[] for which distance(ref_points[idx],
-        ref_points[p]) < PAUSE_SNAP, it returns p. Otherwise it returns idx.
+        ref_points[p]) < pause_snap, it returns p. Otherwise it returns idx.
     """
 
     # try to round stopping point to pause in ref
     mindiff, minidx = None, None
     for p in pauses:
         d = abs(idx - p)
-        if mindiff == None or d < mindiff:
+        if mindiff is None or d < mindiff:
             mindiff = d
             minidx = p
 
     # this is too far from the pause to make sense
     pause_dist = dist(ref_points[idx], ref_points[minidx])
 
-    if pause_dist > (PAUSE_SNAP / 1000):
+    if pause_dist > (pause_snap / 1000):
         logging.debug("pause_dist of %f is too far to make sense", pause_dist)
         minidx = idx
 
     return minidx
 
+
 def create_modified_point(point, time, to_zone_str, speed_in_ms, cumulative_dist):
-    """ Creates a new GPX point with an informative <cmt> block
+    """Creates a new GPX point with an informative <cmt> block
 
     Parameters:
         point (gpxpy.gpx.GPXTrackPoint[]): a pre-existing GPX point
@@ -423,17 +480,24 @@ def create_modified_point(point, time, to_zone_str, speed_in_ms, cumulative_dist
     time = utc_time.astimezone(to_zone)
 
     # construct <cmt> block for <trkpt>
-    point.comment = "%s\n%s\n%5.2f km\n%d km/h" % (time.strftime("%b %-d, %Y"), time.strftime("%H:%M:%S"), cumulative_dist, speed_in_kmh)
+    point.comment = "%s\n%s\n%5.2f km\n%d km/h" % (
+        time.strftime("%b %-d, %Y"),
+        time.strftime("%H:%M:%S"),
+        cumulative_dist,
+        speed_in_kmh,
+    )
     logging.debug("segment_points.append(%s)" % (str(point)))
     logging.debug("comment:\n%s" % (str(point.comment)))
 
     return point
 
-DEFAULT_RADIUS = 0.1 # km
-RADIUS_MIN = 0.10 # anything within this # of km is considered within RADIUS
-RADIUS_TOLERANCE = 2.50 # anything outside of 20 meters is subject to RADIUS_TOLERANCE
 
-def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radius'):
+DEFAULT_RADIUS = 0.1  # km
+RADIUS_MIN = 0.10  # anything within this # of km is considered within RADIUS
+RADIUS_TOLERANCE = 2.50  # anything outside of 20 meters is subject to RADIUS_TOLERANCE
+
+
+def find_closest(p, refs, start, radius=DEFAULT_RADIUS, search="best_in_radius"):
     """
     Finds the geographically closest GPX point in a track given another GPX point.
 
@@ -487,8 +551,8 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
 
     """
 
-    if search not in ['first_in_radius', 'last_in_radius', 'best_in_radius']:
-        raise("find_closest bad search argument")
+    if search not in ["first_in_radius", "last_in_radius", "best_in_radius"]:
+        raise ("find_closest bad search argument")
 
     if not radius:
         radius = DEFAULT_RADIUS
@@ -496,7 +560,7 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
     logging.debug("find_closest, radius = %f" % (radius))
 
     in_radius = False
-    mindist, minidx = None, len(refs)-1
+    mindist, minidx = None, len(refs) - 1
 
     for idx in range(start, len(refs)):
         ref = refs[idx]
@@ -508,22 +572,28 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
             if not in_radius:
                 in_radius = True
                 logging.debug("xdist < radius, in_radius")
-            if search == 'first_in_radius':
-                logging.debug("xdist < radius, search == 'first' returning with idx %d " % (idx))
+            if search == "first_in_radius":
+                logging.debug(
+                    "xdist < radius, search == 'first' returning with idx %d " % (idx)
+                )
                 return idx
 
         # we left the radius after having been in it
         elif in_radius:
             logging.debug("left radius")
-            if search == 'last_in_radius':
-                logging.debug("left radius, search == 'last', returning with %d" % (idx-1))
-                return idx-1
-            elif search == 'best_in_radius':
-                logging.debug("left radius, search == 'best_abort', returning with %d" % (minidx))
+            if search == "last_in_radius":
+                logging.debug(
+                    "left radius, search == 'last', returning with %d" % (idx - 1)
+                )
+                return idx - 1
+            elif search == "best_in_radius":
+                logging.debug(
+                    "left radius, search == 'best_abort', returning with %d" % (minidx)
+                )
                 return minidx
             in_radius = False
 
-        if mindist == None or xdist < mindist:
+        if mindist is None or xdist < mindist:
             mindist = xdist
             minidx = idx
             logging.debug("new mindist = %f at idx %d" % (xdist, idx))
@@ -536,13 +606,13 @@ def find_closest(p, refs, start, radius = DEFAULT_RADIUS, search = 'best_in_radi
     return minidx
 
 
-
 LOOKBACK = 10
-def gpxcomment(points, ref_points, force_timezone=False):
 
+
+def gpxcomment(points, ref_points, force_timezone=False, pause_snap=DEFAULT_PAUSE_SNAP):
     # build an array of indices in ref_points[] that correspond to the start of
     # a pause
-    pauses = find_pauses(ref_points)
+    pauses = find_pauses(ref_points, pause_snap=pause_snap)
     logging.debug("Pauses = " + str(pauses))
 
     # as we traverse points and we match to a pause, pause_idx is the index in
@@ -582,31 +652,49 @@ def gpxcomment(points, ref_points, force_timezone=False):
 
     xpoints, processed_pauses = [], []
     for pidx, point in enumerate(points):
-        logging.debug("Processing pidx %d, point %s, prev_idx = %s" % (pidx, str(point), str(prev_idx)))
+        logging.debug(
+            "Processing pidx %d, point %s, prev_idx = %s"
+            % (pidx, str(point), str(prev_idx))
+        )
 
         # distance of previous point/reference match
         prev_dist = None
         if pidx > 0:
-            prev_dist = dist(points[pidx-1], ref_points[prev_idx])
+            prev_dist = dist(points[pidx - 1], ref_points[prev_idx])
 
         # find the best distance match; be willing to match to the past, though
         # not further back than idx-LOOKBACK, and certainly not beyond the
         # 0-index.
-        idx = find_closest(point, ref_points, max(0, backstop_idx, idx-LOOKBACK), prev_dist)
+        idx = find_closest(
+            point, ref_points, max(0, backstop_idx, idx - LOOKBACK), prev_dist
+        )
 
         # possibly snap it to the next pause
-        snap_idx = snap_to_pause(pauses, ref_points, idx)
-        logging.debug("idx %d (dist = %f), snap_idx %d (dist = %f)" % (idx, dist(point, ref_points[idx]), snap_idx, dist(point, ref_points[snap_idx])))
+        snap_idx = snap_to_pause(pauses, ref_points, idx, pause_snap=pause_snap)
+        logging.debug(
+            "idx %d (dist = %f), snap_idx %d (dist = %f)"
+            % (
+                idx,
+                dist(point, ref_points[idx]),
+                snap_idx,
+                dist(point, ref_points[snap_idx]),
+            )
+        )
 
         # don't snap to a pause if a) already in a pause or b) this pause has
         # already been snapped to previously
         if snap_idx in processed_pauses and not pause_start_at:
-            logging.debug("Skipping snap_idx %d because already processed in %s" % (snap_idx, str(processed_pauses)))
+            logging.debug(
+                "Skipping snap_idx %d because already processed in %s"
+                % (snap_idx, str(processed_pauses))
+            )
 
         # snap to this pause
         else:
             idx = snap_idx
-            logging.debug("idx -> snap_idx %d, dist = %f" % (idx, dist(point, ref_points[idx])))
+            logging.debug(
+                "idx -> snap_idx %d, dist = %f" % (idx, dist(point, ref_points[idx]))
+            )
 
         # we entered or are (still) in a pause
         if idx in pauses:
@@ -620,32 +708,53 @@ def gpxcomment(points, ref_points, force_timezone=False):
                 pause_idx = new_pause_idx
                 processed_pauses.append(idx)
                 pause_start_at = ref_points[pauses[pause_idx]].time
-                pause_end_at = ref_points[pauses[pause_idx]+1].time
+                pause_end_at = ref_points[pauses[pause_idx] + 1].time
                 pause_duration = (pause_end_at - pause_start_at).total_seconds()
-                logging.debug("Start of pause_idx %d, pause at %s, end of pause %s, duration %d " % (pause_idx, pause_start_at, pause_end_at, pause_duration))
+                logging.debug(
+                    "Start of pause_idx %d, pause at %s, end of pause %s, duration %d "
+                    % (pause_idx, pause_start_at, pause_end_at, pause_duration)
+                )
 
-            # we are entereing a new pause, so we need to "glue" this new pause
+            # we are entering a new pause, so we need to "glue" this new pause
             # to the previous pause.
             elif new_pause_idx != pause_idx:
                 pause_idx = new_pause_idx
                 processed_pauses.append(idx)
-                pause_end_at = ref_points[pauses[pause_idx]+1].time
+                pause_end_at = ref_points[pauses[pause_idx] + 1].time
                 pause_duration = (pause_end_at - pause_start_at).total_seconds()
-                logging.debug("Started consecutive pause_idx %d, still started pause at %s, new end of pause %s, new duration %d " %
-                        (pause_idx, pause_start_at, pause_end_at, pause_duration))
+                logging.debug(
+                    "Started consecutive pause_idx %d, still started pause at %s, new end of pause %s, new duration %d "
+                    % (pause_idx, pause_start_at, pause_end_at, pause_duration)
+                )
 
-            logging.debug("idx = %d, dist = %f, pause_idx = %s" % (idx, dist(point, ref_points[idx]), pause_idx))
-            backstop_idx = pause_idx+1
+            logging.debug(
+                "idx = %d, dist = %f, pause_idx = %s"
+                % (idx, dist(point, ref_points[idx]), pause_idx)
+            )
+            backstop_idx = pause_idx + 1
 
         # came out of pause; now we know how long the pause was
         elif pause_start_at:
-            logging.debug("Came out of pause; buffered points = " + str(len(pause_points)) + " over " + str(pause_duration) + " seconds ")
+            logging.debug(
+                "Came out of pause; buffered points = "
+                + str(len(pause_points))
+                + " over "
+                + str(pause_duration)
+                + " seconds "
+            )
 
             # add all the buffered points while smoothing out the paused time
             for buffered_idx, buffered_point in enumerate(pause_points):
-                time = pause_start_at + timedelta(seconds=((float(pause_duration) / float(len(pause_points))) * buffered_idx))
+                time = pause_start_at + timedelta(
+                    seconds=(
+                        (float(pause_duration) / float(len(pause_points)))
+                        * buffered_idx
+                    )
+                )
                 logging.debug("Fake time for buffered point: %s" % (time))
-                mpoint = create_modified_point(buffered_point, time, to_zone_str, 0, cumulative_dist)
+                mpoint = create_modified_point(
+                    buffered_point, time, to_zone_str, 0, cumulative_dist
+                )
                 xpoints.append(mpoint)
             pause_start_at = None
             pause_points = []
@@ -656,7 +765,17 @@ def gpxcomment(points, ref_points, force_timezone=False):
             pause_points.append(point)
             continue
 
-        logging.info("gpxcomment: %05d / %05d (%02d%%) => %05d: dist %f @ %s" % (pidx, len(points), (((pidx+1) / len(points)) * 100), idx, dist(point, ref_points[idx]), ref_points[idx].time))
+        logging.info(
+            "gpxcomment: %05d / %05d (%02d%%) => %05d: dist %f @ %s"
+            % (
+                pidx,
+                len(points),
+                (((pidx + 1) / len(points)) * 100),
+                idx,
+                dist(point, ref_points[idx]),
+                ref_points[idx].time,
+            )
+        )
 
         # calculate speed if not specified
         # do it the simple way, but possible to include earth's
@@ -667,18 +786,20 @@ def gpxcomment(points, ref_points, force_timezone=False):
             if idx == 0:
                 speed = 0
             else:
-                xdist = dist(ref_points[idx-1], ref_points[idx])
-                xdiff = diff(ref_points[idx-1], ref_points[idx])
+                xdist = dist(ref_points[idx - 1], ref_points[idx])
+                xdiff = diff(ref_points[idx - 1], ref_points[idx])
                 speed = (xdist * 1000) / xdiff
 
         # track cumulative distance
         if prev_idx:
             for i in range(prev_idx, idx):
-                cumulative_dist += dist(ref_points[i], ref_points[i+1])
+                cumulative_dist += dist(ref_points[i], ref_points[i + 1])
         prev_idx = idx
 
         # add the point to the output track
-        mpoint = create_modified_point(point, ref_points[idx].time, to_zone_str, speed, cumulative_dist)
+        mpoint = create_modified_point(
+            point, ref_points[idx].time, to_zone_str, speed, cumulative_dist
+        )
         xpoints.append(mpoint)
 
     return xpoints

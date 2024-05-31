@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import sys
 import argparse
 import logging
+import sys
 import traceback
 
 import gpxlib
+
 
 #
 # Assumptions:
@@ -44,17 +45,41 @@ import gpxlib
 #
 #
 def main():
-    parser = argparse.ArgumentParser(description="A tool to concatenate and time-correct one or more GPX files")
-    parser.add_argument("-v", "--verbose", help="Increase output verbosity (thus rendering output XML unusable)", action="store_true")
-    parser.add_argument("-s", "--stretch", help="Time expansion factor", type=int, default=gpxlib.DEFAULT_CAT_STRETCH)
-    parser.add_argument("-k", "--killgap", help="Removes time gap between GPX files", action="store_true")
-    parser.add_argument("-g", "--gaplength", help="When combined with -k replaces time gap with fixed # of seconds", type=int, default=gpxlib.DEFAULT_CAT_GAPLENGTH)
+    parser = argparse.ArgumentParser(
+        description="A tool to concatenate and time-correct one or more GPX files"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Increase output verbosity (thus rendering output XML unusable)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-s",
+        "--stretch",
+        help="Time expansion factor",
+        type=int,
+        default=gpxlib.DEFAULT_CAT_STRETCH,
+    )
+    parser.add_argument(
+        "-k",
+        "--killgap",
+        help="Removes time gap between GPX files",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-g",
+        "--gaplength",
+        help="When combined with -k replaces time gap with fixed # of seconds",
+        type=int,
+        default=gpxlib.DEFAULT_CAT_GAPLENGTH,
+    )
     parser.add_argument("-o", "--output", help="Write output to OUTPUT")
-    parser.add_argument('files', nargs='*')
+    parser.add_argument("files", nargs="*")
     args = parser.parse_args()
 
     if not args.files:
-        parser.error('At least one one input file expected')
+        parser.error("At least one one input file expected")
 
     points_list = []
 
@@ -65,16 +90,22 @@ def main():
     gpx_out, segment = gpxlib.create(gpx_in)
 
     try:
-        segment.points = gpxlib.gpxcat(points_list, stretch=args.stretch, killgap=args.killgap, gaplength=args.gaplength)
-    except Exception as e:
+        segment.points = gpxlib.gpxcat(
+            points_list,
+            stretch=args.stretch,
+            killgap=args.killgap,
+            gaplength=args.gaplength,
+        )
+    except Exception:
         sys.exit(traceback.format_exc())
 
     s = gpx_out.to_xml()
     if args.output:
-        with open(args.output, 'w') as f:
+        with open(args.output, "w") as f:
             f.write(s)
     else:
         print(s)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

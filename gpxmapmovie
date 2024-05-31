@@ -1,54 +1,94 @@
 #!/usr/bin/env python
 
-import os
-from subprocess import run, Popen, call, PIPE, check_output
-import sys
 import argparse
-import getpass
 import datetime
+import getpass
 import logging
+import os
 import re
 import shlex
-import traceback
-import textwrap
+import sys
 import tempfile
-# from ffprobe import FFProbe
+import textwrap
+import traceback
+from subprocess import PIPE, Popen, call, check_output, run
 
 import gpxlib
 
+# from ffprobe import FFProbe
+
+
 GOPRO2GPX = "gopro2gpx"
-DURATION_FIX = -40 # milliseconds from calculated total duration
-DEFAULT_LOG_LEVEL = 'info'
-ENVVAR_JAR = 'GPXMAPMOVIE_JAR'
-ENVVAR_PATH = 'GPXMAPMOVIE_PATH'
+DURATION_FIX = -40  # milliseconds from calculated total duration
+DEFAULT_LOG_LEVEL = "info"
+ENVVAR_JAR = "GPXMAPMOVIE_JAR"
+ENVVAR_PATH = "GPXMAPMOVIE_PATH"
+
 
 def main():
-    parser = argparse.ArgumentParser(description="A wrapper around GPX Animator [https://gpx-animator.app]",
-                                     formatter_class=argparse.RawTextHelpFormatter,
-                                     epilog=textwrap.dedent('''\
-MORE INFORMATION
-----------------
-Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
-    '''))
+    parser = argparse.ArgumentParser(
+            description="A wrapper around GPX Animator [https://gpx-animator.app]",
+            formatter_class=argparse.RawTextHelpFormatter,
+            epilog=textwrap.dedent(
+                """\
+                        MORE INFORMATION
+                        ----------------
+                        Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
+                        """
+                        ),
+            )
     duration_group = parser.add_mutually_exclusive_group()
-    duration_group.add_argument("-d", "--divide", help="Divide computed --total-duration by DIVIDE", type=float)
-    duration_group.add_argument("-t", "--total-duration", help="Force total duration of video (in milliseconds)", type=int)
+    duration_group.add_argument(
+            "-d", "--divide", help="Divide computed --total-duration by DIVIDE", type=float
+            )
+    duration_group.add_argument(
+            "-t",
+            "--total-duration",
+            help="Force total duration of video (in milliseconds)",
+            type=int,
+            )
 
     parser.add_argument("-a", "--args", help="Default args for GPX Animator")
-    parser.add_argument("-p", "--path", help="Make --args, --files, --reference relative to --path")
+    parser.add_argument(
+            "-p", "--path", help="Make --args, --files, --reference relative to --path"
+            )
+    parser.add_argument(
+            "-s",
+            "--snap",
+            help="Optional --snap argument to gpxcomment",
+            default=gpxlib.DEFAULT_PAUSE_SNAP,
+            )
     parser.add_argument("-f", "--files", help="See FILES below")
-    parser.add_argument("-j", "--jar", help="Location of GPX Animator .jar file; can be set with GPXMAPMOVIE_JAR")
-    parser.add_argument("-l", "--log", help="Log level (INFO, DEBUG, WARNING, ERROR)", default=DEFAULT_LOG_LEVEL)
-    parser.add_argument("-r", "--reference", help="Reference GPX track to unwarp time stamps")
+    parser.add_argument(
+            "-j",
+            "--jar",
+            help="Location of GPX Animator .jar file; can be set with GPXMAPMOVIE_JAR",
+            )
+    parser.add_argument(
+            "-l",
+            "--log",
+            help="Log level (INFO, DEBUG, WARNING, ERROR)",
+            default=DEFAULT_LOG_LEVEL,
+            )
+    parser.add_argument(
+            "-r", "--reference", help="Reference GPX track to unwarp time stamps"
+            )
     parser.add_argument("-i", "--input", help="Path to output", action="append")
-    parser.add_argument("-z", "--force-timezone", help="Only when used with --reference: force per-point timezone lookup", action="store_true")
-    parser.add_argument("-k", "--keep", help="Don't trash generated GPX file", action="store_true")
+    parser.add_argument(
+            "-z",
+            "--force-timezone",
+            help="Only when used with --reference: force per-point timezone lookup",
+            action="store_true",
+            )
+    parser.add_argument(
+            "-k", "--keep", help="Don't trash generated GPX file", action="store_true"
+            )
     args, pass_args = parser.parse_known_args()
 
     # logging
     numeric_level = getattr(logging, args.log.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % args.log)
+        raise ValueError("Invalid log level: %s" % args.log)
     logging.basicConfig(level=numeric_level, format="%(asctime)s -- %(message)s")
 
     jarpath = None
@@ -70,19 +110,31 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     args_args = None
     if args.args:
-        args_args = os.path.join(filepath, args.args) if filepath and not os.path.isabs(args.args) else args.args
+        args_args = (
+                os.path.join(filepath, args.args)
+                if filepath and not os.path.isabs(args.args)
+                else args.args
+                )
         if not os.path.isfile(args_args):
             sys.exit("--args parameter %s does not exist" % (args_args))
 
     args_reference = None
     if args.reference:
-        args_reference = os.path.join(filepath, args.reference) if filepath and not os.path.isabs(args.reference) else args.reference
+        args_reference = (
+                os.path.join(filepath, args.reference)
+                if filepath and not os.path.isabs(args.reference)
+                else args.reference
+                )
         if not os.path.isfile(args_reference):
             sys.exit("--reference parameter %s does not exist" % (args_reference))
 
     args_files = None
     if args.files:
-        args_files = os.path.join(filepath, args.files) if filepath and not os.path.isabs(args.files) else args.files
+        args_files = (
+                os.path.join(filepath, args.files)
+                if filepath and not os.path.isabs(args.files)
+                else args.files
+                )
         if not os.path.isfile(args_files):
             sys.exit("--files parameter %s does not exist" % (args_files))
 
@@ -99,7 +151,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     # .gpx file from the given .mp4 file.
     #
     # An optional second column is either the absolute or relative path (i.e.,
-    # relative to the file itself) to a .gpx file OR a string that starts with
+                                                                         # relative to the file itself) to a .gpx file OR a string that starts with
     # a '|' character. In that case, it specifies one or more functions that
     # need to be applied to the .gpx file automatically generated from the .mp4 file.
     #
@@ -119,15 +171,15 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     mp4_files, gpx_files, gpx_pipes, durations, total_duration = [], [], [], [], 0
     if args_files:
         files_basedir, _ = os.path.split(args_files)
-        with open(args_files, 'r') as f:
+        with open(args_files, "r") as f:
             lines = f.readlines()
         for line in lines:
             # remove trailing comments
-            line = re.sub(r'\s*#[^#]*$', '', line)
+            line = re.sub(r"\s*#[^#]*$", "", line)
             line = line.strip()
 
             # skip empty or commented lines
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
             words = shlex.split(line)
             if not words[0].lower().endswith(".mp4"):
@@ -146,7 +198,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
                         gpx_files[-1] = words[1]
                     else:
                         gpx_files[-1] = os.path.join(files_basedir, words[1])
-                elif words[1].startswith('|'):
+                elif words[1].startswith("|"):
                     # join the rest of the line together, remove leading |
                     cmd = " ".join(words[1:]).strip()[1:]
                     gpx_pipes[-1] = cmd
@@ -155,9 +207,9 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # no --files argument: read files from command line, but stop when encountering something that
     # isn't a file.
-    else:
-        while len(args.input) > 0:
-            p0 = args.input[0]
+else:
+    while len(args.input) > 0:
+        p0 = args.input[0]
 
             if p0.lower().endswith(".mp4"):
                 mp4_files.append(args.input.pop(0))
@@ -167,7 +219,9 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
                 break
 
         if len(mp4_files) and len(gpx_files):
-            sys.exit("You can either pass .mp4 files or .gpx files, but not both. Consider using --files to pass both")
+            sys.exit(
+                    "You can either pass .mp4 files or .gpx files, but not both. Consider using --files to pass both"
+                    )
 
         if not mp4_files:
             mp4_files = [None] * len(gpx_files)
@@ -202,7 +256,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         #
         if not gpx_file:
             logging.info("Extract GPX from %s" % (mp4_file))
-            thunk = run([GOPRO2GPX, '-s', mp4_file], capture_output=True, text=True)
+            thunk = run([GOPRO2GPX, "-s", mp4_file], capture_output=True, text=True)
             if thunk.returncode:
                 sys.exit("%s failed:\n%s" % (GOPRO2GPX, thunk.stderr))
             lines = thunk.stdout.strip().split("\n")
@@ -219,7 +273,23 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         # mp4_data = FFProbe(mp4_file)
 
         # https://stackoverflow.com/questions/30977472/python-getting-duration-of-a-video-with-ffprobe
-        duration_s = check_output(['ffprobe', '-i', mp4_file, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=%s' % ("p=0")]).decode("utf-8").strip()
+        duration_s = (
+                check_output(
+                    [
+                        "ffprobe",
+                        "-i",
+                        mp4_file,
+                        "-show_entries",
+                        "format=duration",
+                        "-v",
+                        "quiet",
+                        "-of",
+                        "csv=%s" % ("p=0"),
+                        ]
+                    )
+                .decode("utf-8")
+                .strip()
+                )
         # duration_s = mp4_data.__dict__['metadata']['Duration']
         # convert to duration by pretending it's a time since 00:00:00.00
         # zero = datetime.datetime.strptime('00:00:00.00', '%H:%M:%S.%f')
@@ -236,8 +306,15 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             sys.exit("GPX file %s does not exist" % (f))
 
     # sanity check: len(mp4_files) == len(gpx_files) == len(gpx_pipes)
-    if len(mp4_files) != len(gpx_files) or len(mp4_files) != len(gpx_pipes) or len(gpx_files) != len(gpx_pipes):
-        sys.exit("sanity check failed: mp4_files: %d, gpx_files: %d, gpx_pipes: %d" % (len(gpx_files), len(mp4_files), len(gpx_pipes)))
+    if (
+            len(mp4_files) != len(gpx_files)
+            or len(mp4_files) != len(gpx_pipes)
+            or len(gpx_files) != len(gpx_pipes)
+            ):
+        sys.exit(
+                "sanity check failed: mp4_files: %d, gpx_files: %d, gpx_pipes: %d"
+                % (len(gpx_files), len(mp4_files), len(gpx_pipes))
+                )
 
     # read GPX files into points
     gpx_file_points = []
@@ -266,10 +343,15 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         if not gpx_pipe:
             continue
 
-        for xargs in gpx_pipe.split('|'):
-            xargs = [arg.strip() for arg in xargs.split(',')]
+        for xargs in gpx_pipe.split("|"):
+            xargs = [arg.strip() for arg in xargs.split(",")]
             func = xargs.pop(0)
-            exec_s = "gpx_file_points[%d] = gpxlib.%s(gpx_file_points[%d], %s)" % (idx, func, idx, ", ".join(xargs))
+            exec_s = "gpx_file_points[%d] = gpxlib.%s(gpx_file_points[%d], %s)" % (
+                    idx,
+                    func,
+                    idx,
+                    ", ".join(xargs),
+                    )
             logging.info("Piping GPX file %s through %s" % (gpx_files[idx], exec_s))
             try:
                 exec(exec_s)
@@ -278,7 +360,10 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
 
     # informative: list gpx files and durations
     for idx, gpx_file in enumerate(gpx_files):
-        logging.info("Duration %s : %s" % (gpx_file, str(durations[idx]) if len(durations) else "?"))
+        logging.info(
+                "Duration %s : %s"
+                % (gpx_file, str(durations[idx]) if len(durations) else "?")
+                )
 
     # cat all files together
     try:
@@ -293,7 +378,12 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         gpx_in, ref_points = gpxlib.read(args_reference)
         try:
             logging.info("Apply gpxcomment with reference %s" % (args_reference))
-            points = gpxlib.gpxcomment(points, ref_points, force_timezone=args.force_timezone)
+            points = gpxlib.gpxcomment(
+                    points,
+                    ref_points,
+                    force_timezone=args.force_timezone,
+                    pause_snap=int(args.snap),
+                    )
         except Exception as e:
             sys.exit(traceback.format_exc())
 
@@ -302,7 +392,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
     segment.points = points
 
     tmpfile = tempfile.NamedTemporaryFile(delete=not args.keep)
-    with open(tmpfile.name, 'w') as f:
+    with open(tmpfile.name, "w") as f:
         f.write(gpx_out.to_xml())
         f.flush()
 
@@ -313,7 +403,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         # read default args for GPX Animator from a file, if given
         pass_args_h = {}
         if args_args:
-            with open(args_args, 'r') as fx:
+            with open(args_args, "r") as fx:
                 for line in fx.readlines():
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -327,7 +417,11 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         # turn pass_args_into a hash
         while len(pass_args):
             arg = pass_args.pop(0)
-            if arg.startswith('--') and pass_args[0] and not pass_args[0].startswith('--'):
+            if (
+                    arg.startswith("--")
+                    and pass_args[0]
+                    and not pass_args[0].startswith("--")
+                    ):
                 pass_args_h[arg] = pass_args.pop(0)
             else:
                 pass_args_h[arg] = None
@@ -339,7 +433,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
                 cmd.append(value)
 
         # --input argument to GPXA
-        cmd += ['--input', tmpfile.name]
+        cmd += ["--input", tmpfile.name]
 
         if args.divide:
             total_duration /= float(args.divide)
@@ -348,7 +442,7 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
             total_duration = args.total_duration
 
         if total_duration:
-            cmd += ['--total-time', str(int(total_duration) + DURATION_FIX)]
+            cmd += ["--total-time", str(int(total_duration) + DURATION_FIX)]
 
         logging.info(" ".join(cmd))
         call(cmd)
@@ -356,5 +450,6 @@ Up-to-date documentation at https://github.com/thomergil/gopro-map-sync
         if args.keep:
             logging.info("GPX file kept at %s" % (tmpfile.name))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
