@@ -1,0 +1,9 @@
+[MASTER]
+load-plugins=pylint_django
+django-settings-module=bmt.settings
+
+[MESSAGES CONTROL]
+disable=missing-docstring,too-many-statements
+
+[FORMAT]
+max-line-length = 120
